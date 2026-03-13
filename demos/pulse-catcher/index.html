@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pulse Catcher</title>
+  <style>
+    :root{--bg:#090d1a;--card:#121a32;--text:#e9efff;--muted:#9db2df;--p:#a78bfa;--g:#34d399;--w:#f59e0b;--m:#fb7185}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at 50% -20%,#1a2550,var(--bg));color:var(--text)}
+    .wrap{max-width:430px;margin:0 auto;padding:12px}
+    .card{background:rgba(18,26,50,.92);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:12px;margin-bottom:10px}
+    h1{margin:0 0 4px;font-size:21px}.sub{margin:0;color:var(--muted);font-size:13px}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .stat{background:#0e152a;border-radius:10px;padding:8px;font-size:12px;text-align:center}.stat b{display:block;font-size:16px;margin-top:3px}
+    .arena{height:360px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+    .target{width:150px;height:150px;border-radius:50%;border:8px solid rgba(167,139,250,.25);position:relative}
+    .perfect{position:absolute;inset:26px;border:4px solid rgba(52,211,153,.8);border-radius:50%}
+    .good{position:absolute;inset:14px;border:4px solid rgba(245,158,11,.6);border-radius:50%}
+    .pulse{position:absolute;left:50%;top:50%;width:260px;height:260px;border:8px solid #a78bfa;border-radius:50%;transform:translate(-50%,-50%)}
+    #tap{width:100%;padding:12px;border-radius:12px;border:0;font-weight:800;font-size:16px;color:#0c1020;background:linear-gradient(135deg,#a78bfa,#34d399)}
+    #start{width:100%;padding:12px;border-radius:12px;border:0;font-weight:800;font-size:16px;color:#0c1020;background:linear-gradient(135deg,#93c5fd,#34d399);margin-top:8px}
+    #feedback{margin-top:8px;font-weight:700;min-height:20px}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card"><h1>Pulse Catcher</h1><p class="sub">45 секунд реакции: лови тайминг, держи streak, бей рекорд.</p></div>
+  <div class="card stats">
+    <div class="stat">⏱<b id="time">45</b></div>
+    <div class="stat">🏁<b id="score">0</b></div>
+    <div class="stat">🔥<b id="streak">0</b></div>
+    <div class="stat">🏆<b id="best">0</b></div>
+  </div>
+  <div class="card">
+    <div class="arena">
+      <div class="target"><div class="good"></div><div class="perfect"></div></div>
+      <div id="pulse" class="pulse"></div>
+    </div>
+    <button id="tap">TAP</button>
+    <button id="start">Старт</button>
+    <div id="feedback">Жми старт и тапай в момент, когда кольцо в центре.</div>
+  </div>
+</div>
+<script>
+(() => {
+  const s={running:false,time:45,score:0,streak:0,pulse:260,dir:-1,speed:2.3};
+  const el=id=>document.getElementById(id);
+  const ui={time:el('time'),score:el('score'),streak:el('streak'),best:el('best'),pulse:el('pulse'),feedback:el('feedback')};
+  const best=()=>+(localStorage.getItem('pulseCatcherBest')||0);
+  const setBest=v=>localStorage.setItem('pulseCatcherBest',String(v));
+
+  function hud(){ui.time.textContent=s.time;ui.score.textContent=s.score;ui.streak.textContent=s.streak;ui.best.textContent=best();}
+  function feedback(text,color){ui.feedback.textContent=text;ui.feedback.style.color=color||'#e9efff';}
+
+  function judge(){
+    const d=s.pulse; // diameter
+    if(d<=108 && d>=92) return 'perfect';
+    if(d<=136 && d>=74) return 'good';
+    return 'miss';
+  }
+
+  function onTap(){
+    if(!s.running) return;
+    const r=judge();
+    if(r==='perfect'){
+      s.streak++;
+      s.score += 3 + (Math.floor(s.streak/5));
+      feedback('PERFECT +'+(3+Math.floor(s.streak/5)),'#34d399');
+    } else if(r==='good'){
+      s.streak++;
+      s.score += 1;
+      feedback('GOOD +1','#f59e0b');
+    } else {
+      s.streak=0;
+      feedback('MISS','#fb7185');
+    }
+    s.pulse=260; s.dir=-1;
+    hud();
+  }
+
+  function tick(){
+    if(!s.running) return;
+    s.pulse += s.dir*s.speed;
+    if(s.pulse<=54){ s.dir=1; }
+    if(s.pulse>=260){ s.dir=-1; }
+    ui.pulse.style.width=s.pulse+'px'; ui.pulse.style.height=s.pulse+'px';
+    requestAnimationFrame(tick);
+  }
+
+  function start(){
+    s.running=true;s.time=45;s.score=0;s.streak=0;s.pulse=260;s.dir=-1;s.speed=2.3;
+    hud(); feedback('Go! Лови perfect зону подряд.');
+
+    const iv=setInterval(()=>{
+      s.time--; hud();
+      if(s.time%10===0) s.speed=Math.min(3.6,s.speed+0.2);
+      if(s.time<=0){
+        clearInterval(iv); s.running=false;
+        if(s.score>best()) setBest(s.score);
+        hud(); feedback(`Финиш: ${s.score} очков. Ещё раз?`,'#a78bfa');
+      }
+    },1000);
+    requestAnimationFrame(tick);
+  }
+
+  el('tap').addEventListener('click',onTap);
+  el('start').addEventListener('click',start);
+  hud();
+})();
+</script>
+</body>
+</html>

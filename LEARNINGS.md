@@ -99,3 +99,20 @@ New rule:
 
 Next:
 - Add micro-hit feedback for near-miss moments and optional haptic pulse on combo milestones.
+
+## 2026-03-13 (pulse timing MVP)
+
+- Implemented `demos/pulse-catcher/index.html` as a 45-second reaction mini-game.
+- Added timing accuracy tiers: Perfect / Good / Miss.
+- Added streak-based bonus scaling for Perfect hits and persistent local best.
+- Added new card/link to `games.html`; updated `ROADMAP.md` done/candidate sections.
+
+What worked:
+- Accuracy tiers provide clear skill feedback with minimal UI.
+- Streak bonus creates a clean risk/reward retention loop.
+
+New rule:
+- Timing games should always include at least two positive hit tiers + explicit miss reset to keep tension readable.
+
+Next:
+- Add subtle metronome cue (visual pulse beat) and optional haptic on Perfect for stronger rhythm lock.

@@ -30,11 +30,11 @@ SLA: one daily digest run should produce one new playable MVP link.
 ## Current focus (seed)
 
 ### TODAY_MVP (candidate)
-- Idea: **Pulse Catcher**
-- Why: отлично подходит для коротких сессий на реакцию + rhythm retention
-- Complexity: low
+- Idea: **Drift Dot**
+- Why: держание/отпускание как one-thumb control, быстро проверяется tight-gap tension
+- Complexity: low-medium
 - Priority: high
-- Next test (2–4h): 45s tap window + accuracy tiers + streak multiplier
+- Next test (2–4h): hold/release движение + narrow gaps + 60s survival
 
 ### BACKLOG
 1. Lane Surfer (tap to switch lanes, avoid obstacles)
@@ -44,6 +44,7 @@ SLA: one daily digest run should produce one new playable MVP link.
 
 ## Done log
 
+- 2026-03-13: Pulse Catcher MVP shipped in `demos/pulse-catcher/` (45s tap-timing loop, accuracy tiers, streak multiplier, local best)
 - 2026-03-13: Lane Surfer MVP shipped in `demos/lane-surfer/` (30s one-thumb runner, 3 obstacle patterns, combo bonus, local best)
 - 2026-03-13: Fair Shot Arena MVP shipped in `demos/fair-shot-arena/` (A/B RNG fairness test, 45s loop, local best per mode, miss-streak metric)
 - 2026-03-13: Signal Dash demo shipped (mobile controls + tap start + vibro + local top-5)
