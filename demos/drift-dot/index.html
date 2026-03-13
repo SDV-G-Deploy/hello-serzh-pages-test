@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drift Dot</title>
+  <style>
+    :root{--bg:#09101f;--card:#101b34;--text:#e8efff;--muted:#9cb2df;--acc:#60a5fa;--ok:#34d399;--bad:#fb7185}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at 50% -20%,#1a2d5a,var(--bg));color:var(--text)}
+    .wrap{max-width:430px;margin:0 auto;padding:12px}
+    .card{background:rgba(16,27,52,.92);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:12px;margin-bottom:10px}
+    h1{margin:0 0 4px;font-size:21px}.sub{margin:0;color:var(--muted);font-size:13px}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .stat{background:#0d152b;border-radius:10px;padding:8px;font-size:12px;text-align:center}.stat b{display:block;font-size:16px;margin-top:3px}
+    canvas{width:100%;height:420px;background:linear-gradient(180deg,#0b1429,#081022);border-radius:12px;border:1px solid rgba(255,255,255,.12);display:block}
+    #hold,#start{width:100%;padding:12px;border:0;border-radius:12px;font-weight:800;font-size:16px;color:#091123}
+    #hold{background:linear-gradient(135deg,#93c5fd,#34d399)} #start{margin-top:8px;background:linear-gradient(135deg,#a78bfa,#60a5fa)}
+    #hint{margin-top:8px;font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card"><h1>Drift Dot</h1><p class="sub">60 секунд survival: удерживай, чтобы всплывать, отпускай, чтобы падать.</p></div>
+  <div class="card stats">
+    <div class="stat">⏱<b id="time">60</b></div>
+    <div class="stat">🏁<b id="score">0</b></div>
+    <div class="stat">🏆<b id="best">0</b></div>
+  </div>
+  <div class="card">
+    <canvas id="game" width="380" height="420"></canvas>
+    <button id="hold">HOLD TO LIFT</button>
+    <button id="start">Старт</button>
+    <div id="hint">Пройди через узкие gaps. Касание стены = crash.</div>
+  </div>
+</div>
+<script>
+(() => {
+  const c = document.getElementById('game');
+  const x = c.getContext('2d');
+  const el = id => document.getElementById(id);
+  const ui = {time:el('time'),score:el('score'),best:el('best'),hint:el('hint')};
+  const best = ()=> +(localStorage.getItem('driftDotBest')||0);
+  const setBest = v => localStorage.setItem('driftDotBest', String(v));
+
+  const s = {
+    running:false, hold:false,
+    time:60, score:0,
+    dot:{x:88,y:210,r:10,vy:0},
+    walls:[], lastSpawn:0, spawnEvery:1200,
+    speed:2.3, gap:120, t0:0
+  };
+
+  function hud(){ ui.time.textContent=s.time; ui.score.textContent=s.score; ui.best.textContent=best(); }
+
+  function spawnWall(now){
+    const min = 60, max = c.height - 60 - s.gap;
+    const gapY = Math.floor(Math.random()*(max-min+1))+min;
+    s.walls.push({x:c.width+30,w:38,gapY,passed:false});
+    s.lastSpawn = now;
+  }
+
+  function resetRun(){
+    s.time=60; s.score=0; s.dot.y=210; s.dot.vy=0;
+    s.walls=[]; s.lastSpawn=0;
+    s.speed=2.3; s.gap=120;
+  }
+
+  function crash(){
+    s.running=false;
+    if(s.score>best()) setBest(s.score);
+    hud();
+    ui.hint.textContent=`CRASH. Итог: ${s.score}. Нажми Старт.`;
+  }
+
+  function update(dt, now){
+    if(!s.running) return;
+
+    // physics
+    const gravity = 0.42;
+    const lift = -0.72;
+    s.dot.vy += s.hold ? lift : gravity;
+    s.dot.vy *= 0.98;
+    s.dot.y += s.dot.vy;
+
+    if(s.dot.y < s.dot.r || s.dot.y > c.height - s.dot.r) return crash();
+
+    if(!s.lastSpawn || now - s.lastSpawn >= s.spawnEvery) spawnWall(now);
+
+    for(let i=s.walls.length-1;i>=0;i--){
+      const w=s.walls[i];
+      w.x -= s.speed;
+
+      const inX = s.dot.x + s.dot.r > w.x && s.dot.x - s.dot.r < w.x + w.w;
+      const inGap = s.dot.y - s.dot.r > w.gapY && s.dot.y + s.dot.r < w.gapY + s.gap;
+      if(inX && !inGap) return crash();
+
+      if(!w.passed && w.x + w.w < s.dot.x - s.dot.r){
+        w.passed = true;
+        s.score += 1;
+      }
+
+      if(w.x + w.w < -10) s.walls.splice(i,1);
+    }
+
+    // ramp
+    if(s.time % 10 === 0){
+      s.speed = Math.min(4.6, s.speed + 0.0025*dt);
+      s.gap = Math.max(86, s.gap - 0.002*dt);
+      s.spawnEvery = Math.max(760, s.spawnEvery - 0.01*dt);
+    }
+  }
+
+  function draw(){
+    x.clearRect(0,0,c.width,c.height);
+
+    // walls
+    x.fillStyle='#1f3c74';
+    s.walls.forEach(w=>{
+      x.fillRect(w.x,0,w.w,w.gapY);
+      x.fillRect(w.x,w.gapY+s.gap,w.w,c.height-(w.gapY+s.gap));
+    });
+
+    // gap highlight
+    x.strokeStyle='rgba(96,165,250,.18)'; x.lineWidth=2;
+    s.walls.forEach(w=>{ x.strokeRect(w.x+1,w.gapY+1,w.w-2,s.gap-2); });
+
+    // dot
+    x.beginPath(); x.arc(s.dot.x,s.dot.y,s.dot.r,0,Math.PI*2);
+    x.fillStyle='#34d399'; x.fill();
+    x.beginPath(); x.arc(s.dot.x-2,s.dot.y-2,3,0,Math.PI*2); x.fillStyle='rgba(255,255,255,.7)'; x.fill();
+  }
+
+  function loop(now){
+    if(!s.t0) s.t0 = now;
+    const dt = now - s.t0; s.t0 = now;
+    update(dt, now); draw();
+    if(s.running) requestAnimationFrame(loop);
+  }
+
+  function start(){
+    resetRun(); s.running=true; s.t0=0; hud(); ui.hint.textContent='Go! Hold = up, release = down.';
+    const timer = setInterval(()=>{
+      if(!s.running){ clearInterval(timer); return; }
+      s.time--; hud();
+      if(s.time<=0){
+        clearInterval(timer); s.running=false;
+        if(s.score>best()) setBest(s.score);
+        hud(); ui.hint.textContent=`Финиш: ${s.score}. Ещё раз?`;
+      }
+    },1000);
+    requestAnimationFrame(loop);
+  }
+
+  const holdBtn = el('hold');
+  holdBtn.addEventListener('pointerdown',()=>s.hold=true);
+  holdBtn.addEventListener('pointerup',()=>s.hold=false);
+  holdBtn.addEventListener('pointercancel',()=>s.hold=false);
+  holdBtn.addEventListener('pointerleave',()=>s.hold=false);
+  c.addEventListener('pointerdown',()=>s.hold=true);
+  c.addEventListener('pointerup',()=>s.hold=false);
+  c.addEventListener('pointercancel',()=>s.hold=false);
+  el('start').addEventListener('click',start);
+
+  hud(); draw();
+})();
+</script>
+</body>
+</html>

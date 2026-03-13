@@ -116,3 +116,20 @@ New rule:
 
 Next:
 - Add subtle metronome cue (visual pulse beat) and optional haptic on Perfect for stronger rhythm lock.
+
+## 2026-03-13 (drift survival MVP)
+
+- Implemented `demos/drift-dot/index.html` as a 60-second hold/release survival game.
+- Added single-input control model: hold = lift, release = fall.
+- Added moving wall segments with random vertical gaps and gradual difficulty ramp (speed/gap/spawn).
+- Added local best score and linked game in `games.html`; updated roadmap status.
+
+What worked:
+- One-input physics gives immediate mobile feel and fast replay loop.
+- Narrow-gap pressure creates clear tension without complex UI.
+
+New rule:
+- Hold/release MVPs should expose at least one continuously tunable ramp trio: speed, gap size, spawn cadence.
+
+Next:
+- Add near-miss bonus and brief haptic pulse on successful tight-gap pass.
