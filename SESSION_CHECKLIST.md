@@ -15,6 +15,7 @@
 ## After coding (mandatory)
 
 - [ ] Smoke-test the GitHub Pages URL
+- [ ] Ensure demo path is new unique slug: `demos/<slug>/`
 - [ ] Update `LEARNINGS.md` if there are important findings/rules
 - [ ] Update `AGENTS.md` if a long-term rule changed
 - [ ] Update `ROADMAP.md` status (TODAY_MVP / BACKLOG / DONE)

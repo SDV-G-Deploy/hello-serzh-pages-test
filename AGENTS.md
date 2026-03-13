@@ -36,6 +36,11 @@ When a daily game digest arrives, follow this exact order:
 5. Link/deploy through GitHub Pages (same repo).
 6. Send resulting URL to Serg.
 
+Execution SLA:
+- Target: **1 daily digest run = 1 new playable MVP/day**.
+- New MVP must use a **new unique slug** in `demos/<slug>/` (do not overwrite prior daily MVPs).
+- If full pipeline cannot complete, send fail-report automatically with root cause + next action.
+
 ## Mandatory update rule
 
 After **every work session**, if there were important findings/new rules:

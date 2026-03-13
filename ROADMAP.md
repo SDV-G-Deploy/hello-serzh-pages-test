@@ -21,9 +21,11 @@ Pick the top idea as **TODAY_MVP**.
 2. Self-review digest
 3. Choose best idea for mobile-first MVP
 4. Write prompt-plan (copy/paste-ready for Codex)
-5. Build demo in separate folder
+5. Build demo in separate folder (`demos/<new-slug>/`)
 6. Deploy via GitHub Pages
 7. Send URL to Serg
+
+SLA: one daily digest run should produce one new playable MVP link.
 
 ## Current focus (seed)
 
