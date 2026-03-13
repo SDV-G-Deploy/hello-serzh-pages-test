@@ -1,18 +1,92 @@
-<!doctype html><html lang="ru"><head>
-<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Снежана ⚡ — Notes</title><link rel="stylesheet" href="./styles.css" />
-</head><body><main class="container">
-<nav>
-  <a href="./index.html">Home</a>
-  <a href="./about.html">About</a>
-  <a href="./projects.html">Projects</a>
-  <a href="./games.html">GaMeS</a>
-  <a href="./clickable-clouds.html">Clouds</a>
-  <a class="active" href="./notes.html">Notes</a>
-</nav>
-<section class="card">
-  <h1>Notes / Changelog</h1>
-  <p><strong>2026-03-13</strong> — Запустили постоянный сайт, добавили навигацию и 4 раздела.</p>
-  <p><strong>Next</strong> — добавить блок «Что нового», форму обратной связи и мини-портфолио.</p>
-</section>
-</main></body></html>
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Снежана ⚡ — Notes</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="container">
+    <nav>
+      <a href="./index.html">Home</a>
+      <a href="./about.html">About</a>
+      <a href="./projects.html">Projects</a>
+      <a href="./games.html">Games</a>
+      <a href="./clickable-clouds.html">Clouds</a>
+      <a class="active" href="./notes.html">Notes</a>
+    </nav>
+
+    <section class="card notes-shell">
+      <header class="notes-hero" id="notesHero"></header>
+
+      <section class="notes-block" aria-labelledby="timelineTitle">
+        <div class="notes-block-head">
+          <h2 id="timelineTitle">Day-by-day timeline</h2>
+          <p>Лента прогресса по дням: контекст, действия, результат.</p>
+        </div>
+        <div class="notes-timeline" id="notesTimeline"></div>
+      </section>
+
+      <section class="notes-block" aria-labelledby="insightsTitle">
+        <div class="notes-block-head">
+          <h2 id="insightsTitle">Insights</h2>
+          <p>Короткие выводы, чтобы усиливать то, что работает, и не повторять ошибки.</p>
+        </div>
+
+        <div class="insights-grid" id="insightsGrid"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="./notes-data.js"></script>
+  <script>
+    const data = window.NOTES_CONTENT || { hero: {}, entries: [], insights: {} };
+
+    const hero = document.getElementById('notesHero');
+    const timeline = document.getElementById('notesTimeline');
+    const insightsGrid = document.getElementById('insightsGrid');
+
+    hero.innerHTML = `
+      <span class="project-kicker">${data.hero.kicker || 'Notes'}</span>
+      <h1>${data.hero.title || 'Notes'}</h1>
+      <p class="section-subtitle">${data.hero.subtitle || ''}</p>
+    `;
+
+    timeline.innerHTML = (data.entries || []).map((entry) => `
+      <article class="timeline-card">
+        <div class="timeline-meta">
+          <span class="timeline-date">${entry.date || ''}</span>
+          <h3>${entry.title || ''}</h3>
+        </div>
+        <p class="timeline-context"><strong>Контекст:</strong> ${entry.context || ''}</p>
+        <div class="timeline-actions">
+          <strong>Что сделали:</strong>
+          <ul>
+            ${(entry.actions || []).map((item) => `<li>${item}</li>`).join('')}
+          </ul>
+        </div>
+        <p class="timeline-result"><strong>Результат:</strong> ${entry.result || ''}</p>
+      </article>
+    `).join('');
+
+    const insightSections = [
+      { key: 'worked', title: 'Что сработало' },
+      { key: 'failed', title: 'Что не сработало' },
+      { key: 'next', title: 'Что пробуем дальше' }
+    ];
+
+    insightsGrid.innerHTML = insightSections.map((section) => {
+      const items = (data.insights && data.insights[section.key]) || [];
+      return `
+        <article class="insight-card">
+          <h3>${section.title}</h3>
+          <ul>
+            ${items.map((item) => `<li>${item}</li>`).join('')}
+          </ul>
+        </article>
+      `;
+    }).join('');
+  </script>
+</body>
+</html>
