@@ -49,3 +49,17 @@ Next:
 
 New rule:
 - For quick game balancing, expose core constants as mode presets before deeper refactors.
+
+## 2026-03-13 (daily digest → new MVP)
+
+- Selected idea from digest: **Daily Tower Seed** (daily common seed + lightweight leaderboard behavior).
+- Created `demos/daily-tower-seed/PROMPT_PLAN.md`.
+- Implemented playable MVP `demos/daily-tower-seed/index.html`.
+- Added card/link in `games.html`; updated `ROADMAP.md`.
+
+What worked:
+- Deterministic seed from UTC date enables same challenge for all with almost zero backend cost.
+- 3 attempts/day creates healthy scarcity and “come back tomorrow” loop.
+
+New rule:
+- For daily-seed concepts, lock seed to UTC date and show attempts left directly in UI.

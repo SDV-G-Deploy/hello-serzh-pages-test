@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Tower Seed — MVP</title>
+  <style>
+    :root{--bg:#070b16;--card:#0f172a;--line:#334155;--text:#e2e8f0;--muted:#94a3b8;--a:#22d3ee;--b:#818cf8}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at 20% 0,#1e293b,transparent 55%),var(--bg);color:var(--text)}
+    .wrap{max-width:760px;margin:0 auto;padding:16px}.card{background:rgba(15,23,42,.9);border:1px solid var(--line);border-radius:14px;padding:14px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.pill{padding:4px 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}
+    canvas{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--line);background:#020617;touch-action:none;margin:10px 0}
+    button{border:1px solid #4f46e5;background:linear-gradient(135deg,var(--a),var(--b));color:white;padding:8px 12px;border-radius:10px;font-weight:700}
+    a{color:#7dd3fc}
+  </style>
+</head>
+<body>
+<div class="wrap"><div class="card">
+  <div class="row" style="justify-content:space-between"><h1 style="margin:0">Daily Tower Seed</h1><a href="../../games.html">← back to GaMeS</a></div>
+  <p style="margin:0;color:var(--muted)">Одинаковый challenge дня для всех: 30 секунд выживания. Доступно 3 попытки в день.</p>
+  <div class="row" style="margin-top:8px">
+    <span class="pill" id="seedLabel">Seed: --</span>
+    <span class="pill" id="attemptsLabel">Attempts: 3/3</span>
+    <span class="pill" id="bestLabel">Best today: 0</span>
+  </div>
+  <canvas id="c" width="720" height="420"></canvas>
+  <div class="row">
+    <button id="start">Старт / Рестарт</button>
+    <strong id="score">Score: 0</strong>
+    <strong id="time">Time: 30.0s</strong>
+    <span id="state" style="color:var(--muted)">Тапни по полю или кнопке, чтобы начать.</span>
+  </div>
+</div></div>
+
+<script>
+(() => {
+  const c = document.getElementById('c'), ctx = c.getContext('2d');
+  const seedLabel=document.getElementById('seedLabel'), attemptsLabel=document.getElementById('attemptsLabel'), bestLabel=document.getElementById('bestLabel');
+  const scoreEl=document.getElementById('score'), timeEl=document.getElementById('time'), stateEl=document.getElementById('state');
+  const startBtn=document.getElementById('start');
+
+  const W=c.width,H=c.height, cx=W/2, cy=H/2, ringR=118, playerR=8;
+  const dateKey = new Date().toISOString().slice(0,10); // UTC date
+  const prefix = `dailyTower:${dateKey}`;
+  const ATTEMPT_MAX = 3;
+
+  function hashDate(s){ let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} return h>>>0; }
+  function mulberry32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; }; }
+
+  const seed = hashDate(dateKey);
+  const rng = mulberry32(seed);
+
+  let attemptsUsed = Number(localStorage.getItem(prefix+':attempts') || 0);
+  let best = Number(localStorage.getItem(prefix+':best') || 0);
+  let running=false, angle=-Math.PI/2, dir=0, speed=2.95, timeLeft=30, score=0, last=0, elapsed=0;
+  let schedule=[], idx=0, shots=[];
+
+  function renderMeta(){
+    seedLabel.textContent = `Seed: ${dateKey}`;
+    attemptsLabel.textContent = `Attempts: ${Math.max(0,ATTEMPT_MAX-attemptsUsed)}/${ATTEMPT_MAX}`;
+    bestLabel.textContent = `Best today: ${best}`;
+  }
+
+  function makeSchedule(){
+    const r = mulberry32(seed); // reset per run/day for stable pattern
+    const list=[];
+    for(let t=0.5;t<30;t+=0.55){
+      list.push({
+        t,
+        a:r()*Math.PI*2,
+        v:120 + r()*70,
+        rad:6 + r()*5
+      });
+    }
+    return list;
+  }
+
+  function canStart(){ return attemptsUsed < ATTEMPT_MAX; }
+
+  function start(){
+    if(!canStart()){ stateEl.textContent='Лимит попыток на сегодня исчерпан. Возвращайся завтра.'; return; }
+    attemptsUsed++; localStorage.setItem(prefix+':attempts', String(attemptsUsed)); renderMeta();
+    running=true; angle=-Math.PI/2; dir=0; timeLeft=30; score=0; elapsed=0; shots=[]; idx=0; schedule=makeSchedule();
+    last=performance.now(); stateEl.textContent='Run started!'; requestAnimationFrame(loop);
+  }
+
+  function end(msg){
+    running=false;
+    const final=Math.floor(score);
+    if(final>best){ best=final; localStorage.setItem(prefix+':best', String(best)); renderMeta(); }
+    if(navigator.vibrate) navigator.vibrate([25,20,45]);
+    stateEl.textContent = `${msg} ${canStart() ? 'Тапни для новой попытки.' : 'Попытки закончились до завтра.'}`;
+    draw();
+  }
+
+  function spawn(s){
+    const d=ringR+138;
+    shots.push({x:cx+Math.cos(s.a)*d,y:cy+Math.sin(s.a)*d,vx:-Math.cos(s.a)*s.v,vy:-Math.sin(s.a)*s.v,r:s.rad});
+  }
+
+  function loop(ts){
+    if(!running) return;
+    const dt=Math.min((ts-last)/1000,0.033); last=ts; elapsed+=dt; timeLeft-=dt;
+    while(idx<schedule.length && schedule[idx].t<=elapsed){ spawn(schedule[idx]); idx++; }
+    if(timeLeft<=0) return end(`Время! Счёт: ${Math.floor(score)}`);
+
+    angle += dir*speed*dt;
+    for(const s of shots){ s.x+=s.vx*dt; s.y+=s.vy*dt; }
+    shots = shots.filter(s => s.x>-40&&s.x<W+40&&s.y>-40&&s.y<H+40);
+
+    const px=cx+Math.cos(angle)*ringR, py=cy+Math.sin(angle)*ringR;
+    for(const s of shots){ const dx=px-s.x, dy=py-s.y; if(dx*dx+dy*dy < (playerR+s.r)*(playerR+s.r)) return end(`Столкновение! Счёт: ${Math.floor(score)}`); }
+
+    score += dt*3 + Math.abs(dir)*dt;
+    scoreEl.textContent=`Score: ${Math.floor(score)}`;
+    timeEl.textContent=`Time: ${timeLeft.toFixed(1)}s`;
+    draw(); requestAnimationFrame(loop);
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const g=ctx.createRadialGradient(cx,cy,20,cx,cy,300); g.addColorStop(0,'#0f172a'); g.addColorStop(1,'#020617');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle='rgba(148,163,184,.35)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx,cy,ringR,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle='#22d3ee'; ctx.beginPath(); ctx.arc(cx,cy,16,0,Math.PI*2); ctx.fill();
+    for(const s of shots){ ctx.fillStyle='#ef4444'; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill(); }
+    const px=cx+Math.cos(angle)*ringR, py=cy+Math.sin(angle)*ringR;
+    ctx.fillStyle='#a78bfa'; ctx.beginPath(); ctx.arc(px,py,playerR,0,Math.PI*2); ctx.fill();
+    if(!running){
+      ctx.fillStyle='rgba(0,0,0,.34)'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#e2e8f0'; ctx.font='700 30px Inter'; ctx.textAlign='center'; ctx.fillText('Daily Tower Seed',cx,cy-8);
+      ctx.font='500 16px Inter'; ctx.fillText('Hold left/right side to orbit',cx,cy+18);
+    }
+  }
+
+  function setDirFromX(clientX){ dir = clientX < c.getBoundingClientRect().left + c.clientWidth/2 ? -1 : 1; }
+
+  c.addEventListener('pointerdown', (e)=>{ if(!running){ start(); return; } setDirFromX(e.clientX); c.setPointerCapture?.(e.pointerId); });
+  c.addEventListener('pointermove', (e)=>{ if(!running) return; if(e.buttons||e.pressure>0) setDirFromX(e.clientX); });
+  c.addEventListener('pointerup', ()=>{ dir=0; }); c.addEventListener('pointercancel', ()=>{ dir=0; });
+  window.addEventListener('keydown', (e)=>{ if(e.code==='ArrowLeft'||e.code==='KeyA') dir=-1; if(e.code==='ArrowRight'||e.code==='KeyD') dir=1; if(e.code==='Space'&&!running){e.preventDefault();start();} });
+  window.addEventListener('keyup', (e)=>{ if(['ArrowLeft','KeyA','ArrowRight','KeyD'].includes(e.code)) dir=0; });
+  startBtn.addEventListener('click', start);
+
+  renderMeta(); draw();
+})();
+</script>
+</body>
+</html>

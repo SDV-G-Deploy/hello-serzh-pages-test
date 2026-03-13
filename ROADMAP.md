@@ -30,18 +30,20 @@ SLA: one daily digest run should produce one new playable MVP link.
 ## Current focus (seed)
 
 ### TODAY_MVP (candidate)
-- Idea: **Lane Surfer**
-- Why: ultra-readable touch control, very fast polishing path
-- Complexity: low
+- Idea: **Fair Shot Arena**
+- Why: быстрый A/B тест perceived fairness и anti-tilt RNG
+- Complexity: low-medium
 - Priority: high
-- Next test (2–4h): lane-switch core + obstacle pacing + retry loop
+- Next test (2–4h): 1 бой + 2 RNG режима + лог фрустрации
 
 ### BACKLOG
 1. Lane Surfer (tap to switch lanes, avoid obstacles)
 2. Pulse Catcher (timed tap accuracy with combo)
 3. Drift Dot (hold/release movement with narrow gaps)
+4. Merge Sprint 45 (45s loop + лёгкая мета)
 
 ## Done log
 
 - 2026-03-13: Signal Dash demo shipped (mobile controls + tap start + vibro + local top-5)
 - 2026-03-13: Thumb Orbit MVP shipped in `demos/thumb-orbit/` (one-thumb hold controls, 30s loop, local best, vibro)
+- 2026-03-13: Daily Tower Seed MVP shipped in `demos/daily-tower-seed/` (same daily seed, 3 attempts/day, local best)
