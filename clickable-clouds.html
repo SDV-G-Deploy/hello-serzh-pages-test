@@ -9,6 +9,8 @@
     .cloud-page{display:grid;gap:14px}
     .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
     .stats{display:flex;gap:8px;flex-wrap:wrap}
+    .round-bar{height:8px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;position:relative}
+    .round-fill{height:100%;width:0%;background:linear-gradient(90deg,#22d3ee,#34d399);transition:width .2s ease}
     .controls{display:flex;gap:8px;flex-wrap:wrap}
     .pill{display:inline-block;padding:5px 10px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(255,255,255,.06);font-size:14px}
     .pill strong{display:inline-block;transform:translateZ(0)}
@@ -179,6 +181,7 @@
         <span class="pill" id="scorePill">Score: <strong id="score">0</strong></span>
         <span class="pill" id="comboPill">Combo: <strong id="combo">0</strong></span>
         <span class="pill">Best: <strong id="best">0</strong></span>
+        <span class="pill" id="questPill">Quest: <strong id="quest">0/5</strong> · <strong id="timer">30s</strong></span>
       </div>
       <div class="controls">
         <button class="btn subtle" id="soundBtn" type="button" aria-pressed="false">🔇 Sound Off</button>
@@ -187,6 +190,7 @@
       </div>
     </div>
 
+    <div class="round-bar" aria-hidden="true"><div class="round-fill" id="roundFill"></div></div>
     <div class="cloud-scene" id="scene" aria-label="Игровое поле с облаками"></div>
     <div class="sr-live" aria-live="polite" id="liveRegion"></div>
   </section>
@@ -201,6 +205,10 @@
   const scorePill = document.getElementById('scorePill');
   const comboPill = document.getElementById('comboPill');
   const liveRegion = document.getElementById('liveRegion');
+  const questEl = document.getElementById('quest');
+  const timerEl = document.getElementById('timer');
+  const roundFill = document.getElementById('roundFill');
+  const questPill = document.getElementById('questPill');
   const shuffleBtn = document.getElementById('shuffleBtn');
   const soundBtn = document.getElementById('soundBtn');
   const resetBestBtn = document.getElementById('resetBestBtn');
@@ -215,12 +223,18 @@
   const MIN_COMBO_WINDOW_MS = 1200;
   const BASE_CLICK_POINTS = 10;
   const BASE_BURST_BONUS = 35;
+  const ROUND_TARGET_BURSTS = 5;
+  const ROUND_TIME_MS = 30000;
+  const ROUND_REWARD = 300;
 
   let score = 0;
   let combo = 0;
   let best = Number(localStorage.getItem(BEST_KEY) || 0);
   let lastClickTs = 0;
   let gameStartTs = performance.now();
+  let roundEndsAt = 0;
+  let roundBursts = 0;
+  let roundWon = false;
 
   let audioCtx = null;
   let soundEnabled = false;
@@ -384,6 +398,7 @@
     if (cloud.dataset.locked === '1' || cloud.classList.contains('hidden') || cloud.classList.contains('bursting')) return;
 
     setTapLock(cloud, true);
+    startRoundIfNeeded();
     const now = performance.now();
     const comboWindow = getComboWindowMs();
     combo = (now - lastClickTs <= comboWindow) ? combo + 1 : 1;
@@ -413,11 +428,14 @@
     if (localClickCount >= CLOUD_TAP_LIMIT){
       const burstBonus = BASE_BURST_BONUS * combo;
       score += burstBonus;
+      roundBursts += 1;
       emitScoreFloat(x + rand(-12, 12), y - 20, `+${burstBonus} burst`, true);
       burstAndRespawn(cloud);
       liveRegion.textContent = `Combo x${combo}. +${clickPoints} и burst +${burstBonus}`;
       updateBest();
       updateHud();
+      updateRoundHud();
+      if (roundBursts >= ROUND_TARGET_BURSTS) finishRound();
       return;
     }
 
@@ -427,6 +445,41 @@
     updateBest();
     updateHud();
     liveRegion.textContent = `Combo x${combo}. +${clickPoints} очков`;
+  }
+
+
+  function startRoundIfNeeded(){
+    if (roundEndsAt) return;
+    roundEndsAt = performance.now() + ROUND_TIME_MS;
+    roundBursts = 0;
+    roundWon = false;
+    liveRegion.textContent = 'Раунд начался: лопни 5 облаков за 30 секунд';
+  }
+
+  function updateRoundHud(){
+    const leftMs = roundEndsAt ? Math.max(0, roundEndsAt - performance.now()) : ROUND_TIME_MS;
+    const sec = Math.ceil(leftMs / 1000);
+    questEl.textContent = `${roundBursts}/${ROUND_TARGET_BURSTS}`;
+    timerEl.textContent = `${sec}s`;
+    const progress = roundEndsAt ? (leftMs / ROUND_TIME_MS) * 100 : 0;
+    roundFill.style.width = `${progress}%`;
+    questPill.classList.toggle('combo-hot', roundBursts >= ROUND_TARGET_BURSTS - 1 && !roundWon);
+  }
+
+  function finishRound(){
+    if (!roundEndsAt) return;
+    const success = roundBursts >= ROUND_TARGET_BURSTS;
+    if (success && !roundWon){
+      score += ROUND_REWARD;
+      roundWon = true;
+      updateBest();
+      updateHud();
+      liveRegion.textContent = `Квест выполнен! +${ROUND_REWARD} бонуса`;
+    } else if (!success) {
+      liveRegion.textContent = `Раунд окончен: ${roundBursts}/${ROUND_TARGET_BURSTS}. Жми дальше!`;
+    }
+    roundEndsAt = 0;
+    updateRoundHud();
   }
 
   function createCloud(label){
@@ -515,10 +568,13 @@
       combo = 0;
       updateHud();
     }
+    if (roundEndsAt && performance.now() >= roundEndsAt) finishRound();
+    updateRoundHud();
     scene.querySelectorAll('.cloud:not(.hidden):not(.bursting)').forEach(applyCloudDifficulty);
   }, 300);
 
   updateHud();
+  updateRoundHud();
   layoutClouds();
 })();
 </script>
