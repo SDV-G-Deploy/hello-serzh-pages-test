@@ -20,51 +20,43 @@
         linear-gradient(160deg,var(--bg-b),var(--bg-a));
       overflow:hidden;
     }
-    .glow{position:fixed; inset:auto; width:320px; height:320px; border-radius:50%;
+    .glow{position:fixed; width:320px; height:320px; border-radius:50%;
       background:radial-gradient(circle, rgba(56,189,248,.35), transparent 60%);
       filter:blur(16px); animation:float 7s ease-in-out infinite; pointer-events:none}
     .glow.g2{right:4%; top:8%; animation-delay:-2s; background:radial-gradient(circle, rgba(129,140,248,.35), transparent 60%)}
     .glow.g1{left:6%; bottom:8%}
     @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
 
-    .card{
-      width:min(92vw,760px); padding:26px; border:1px solid var(--line);
-      border-radius:22px; background:var(--card); backdrop-filter: blur(10px);
-      box-shadow:0 22px 50px rgba(0,0,0,.38);
-      animation:pop .45s ease-out;
+    .card{width:min(92vw,760px); padding:26px; border:1px solid var(--line); border-radius:22px; background:var(--card); backdrop-filter: blur(10px); box-shadow:0 22px 50px rgba(0,0,0,.38)}
+    .avatar-wrap{display:flex; justify-content:center; margin:4px 0 16px}
+    .avatar{
+      width:92px; height:92px; border-radius:50%; object-fit:cover;
+      border:3px solid rgba(255,255,255,.65);
+      box-shadow:0 8px 24px rgba(0,0,0,.35), 0 0 0 5px rgba(56,189,248,.25);
     }
-    @keyframes pop{from{transform:scale(.98); opacity:.35}to{transform:scale(1); opacity:1}}
 
     table{width:100%; border-collapse:collapse; border:1px solid var(--line); border-radius:16px; overflow:hidden}
     th,td{padding:18px; text-align:center; border-bottom:1px solid rgba(255,255,255,.14)}
-    th{font-size:clamp(18px,2.4vw,24px); letter-spacing:.02em;
-      background:linear-gradient(135deg, rgba(56,189,248,.35), rgba(129,140,248,.35));}
+    th{font-size:clamp(18px,2.4vw,24px); letter-spacing:.02em; background:linear-gradient(135deg, rgba(56,189,248,.35), rgba(129,140,248,.35));}
     td{font-size:clamp(24px,4vw,36px); font-weight:800}
     tr:last-child td{border-bottom:0}
 
     .sub{margin:14px 0 0; text-align:center; color:var(--muted); font-size:clamp(13px,2vw,15px)}
     .actions{display:flex; justify-content:center; margin-top:18px}
-    .btn{
-      appearance:none; border:1px solid rgba(255,255,255,.25); color:white;
-      background:linear-gradient(135deg,var(--accent),var(--accent2));
-      border-radius:12px; padding:11px 16px; font-weight:700; cursor:pointer;
-      transition:transform .14s ease, filter .14s ease;
-      text-decoration:none;
-    }
-    .btn:hover{transform:translateY(-1px); filter:brightness(1.06)}
-    .btn:active{transform:translateY(0)}
-
-    @media (max-width:480px){ .card{padding:18px} th,td{padding:14px} }
+    .btn{appearance:none; border:1px solid rgba(255,255,255,.25); color:white; background:linear-gradient(135deg,var(--accent),var(--accent2)); border-radius:12px; padding:11px 16px; font-weight:700; text-decoration:none}
   </style>
 </head>
 <body>
   <div class="glow g1"></div><div class="glow g2"></div>
   <main class="card">
+    <div class="avatar-wrap">
+      <img class="avatar" src="https://avatars.githubusercontent.com/u/263191120?v=4" alt="GitHub avatar" />
+    </div>
     <table aria-label="Hello table">
       <tr><th>✨ Greeting Board</th></tr>
       <tr><td>Hello, Serzh! 😉</td></tr>
     </table>
-    <p class="sub">Собрано и задеплоено Снежаной ⚡ через GitHub Pages</p>
+    <p class="sub">С аватаркой из GitHub-профиля SDV-G-Deploy</p>
     <div class="actions">
       <a class="btn" href="https://github.com/SDV-G-Deploy/hello-serzh-pages-test" target="_blank" rel="noreferrer">Открыть репозиторий</a>
     </div>
