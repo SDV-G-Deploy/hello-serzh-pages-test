@@ -23,6 +23,18 @@ Purpose: keep context stable between sessions for Codex/agents working in this r
 - Prefer plain HTML/CSS/JS unless complexity clearly requires tooling.
 - After meaningful changes: commit with clear message and push to `main` for Pages validation.
 - If a change affects rules/process, update docs in the same PR/commit.
+- Maintain `ROADMAP.md` as a live source of truth from daily digests.
+
+### Daily digest → MVP autopipeline
+
+When a daily game digest arrives, follow this exact order:
+
+1. Review digest internally.
+2. Select the strongest mobile-first idea (fastest high-value MVP).
+3. Write a concise prompt-plan for implementation.
+4. Build MVP demo in a dedicated folder inside repo (e.g. `demos/<slug>/`).
+5. Link/deploy through GitHub Pages (same repo).
+6. Send resulting URL to Serg.
 
 ## Mandatory update rule
 

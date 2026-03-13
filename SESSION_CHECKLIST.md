@@ -17,6 +17,7 @@
 - [ ] Smoke-test the GitHub Pages URL
 - [ ] Update `LEARNINGS.md` if there are important findings/rules
 - [ ] Update `AGENTS.md` if a long-term rule changed
+- [ ] Update `ROADMAP.md` status (TODAY_MVP / BACKLOG / DONE)
 - [ ] Commit + push with clear message
 
 If no meaningful findings: explicitly note "No new long-term rules" in commit/PR notes.
