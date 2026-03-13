@@ -42,6 +42,7 @@ After **every work session**, if there were important findings/new rules:
 
 - update `LEARNINGS.md` (what changed, why, what to do next), and/or
 - update this `AGENTS.md` if the rule is long-term,
+- update `SITE_ARCHITECTURE.md` if architecture/contracts changed,
 - then commit those doc updates together with code (or as a dedicated follow-up commit).
 
 No "mental notes". Important context must be written to files.
