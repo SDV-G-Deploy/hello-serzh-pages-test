@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thumb Orbit — MVP</title>
+  <style>
+    :root{--bg:#070b16;--card:#0f172a;--line:#334155;--text:#e2e8f0;--muted:#94a3b8;--a:#22d3ee;--b:#818cf8;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at 20% 0,#1e293b,transparent 50%),var(--bg);color:var(--text)}
+    .wrap{max-width:760px;margin:0 auto;padding:16px}
+    .card{background:rgba(15,23,42,.9);border:1px solid var(--line);border-radius:14px;padding:14px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .pill{padding:4px 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}
+    canvas{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--line);background:#020617;touch-action:none;margin:10px 0}
+    button{border:1px solid #4f46e5;background:linear-gradient(135deg,var(--a),var(--b));color:white;padding:8px 12px;border-radius:10px;font-weight:700}
+    a{color:#7dd3fc}
+    h1{margin:0 0 8px;font-size:clamp(26px,6vw,38px)}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <h1>Thumb Orbit</h1>
+      <a href="../../games.html">← back to GaMeS</a>
+    </div>
+    <p style="color:var(--muted);margin:0 0 10px">Управление 1 пальцем: удерживай левую/правую половину поля, чтобы крутиться по орбите и избегать импульсов.</p>
+    <div class="row">
+      <span class="pill">Left hold = CCW</span>
+      <span class="pill">Right hold = CW</span>
+      <span class="pill" id="best">Best: 0</span>
+    </div>
+    <canvas id="c" width="720" height="420"></canvas>
+    <div class="row">
+      <button id="start">Старт / Рестарт</button>
+      <strong id="score">Score: 0</strong>
+      <strong id="time">Time: 30.0s</strong>
+      <span id="state" style="color:var(--muted)">Тап по полю или кнопке для старта.</span>
+    </div>
+  </div>
+</div>
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const timeEl = document.getElementById('time');
+  const stateEl = document.getElementById('state');
+  const bestEl = document.getElementById('best');
+  const startBtn = document.getElementById('start');
+
+  const W=canvas.width,H=canvas.height, cx=W/2, cy=H/2;
+  const ringR=120, playerR=8;
+  let running=false, tLeft=30, score=0, best=Number(localStorage.getItem('thumbOrbitBest')||0);
+  let angle=0, dir=0, speed=2.9, last=0, spawn=0;
+  let shots=[];
+  bestEl.textContent=`Best: ${best}`;
+
+  function reset(){ running=true; tLeft=30; score=0; angle=-Math.PI/2; dir=0; spawn=0; shots=[]; last=performance.now(); stateEl.textContent='Погнали!'; requestAnimationFrame(loop); }
+  function end(msg){ running=false; const f=Math.floor(score); if(f>best){best=f;localStorage.setItem('thumbOrbitBest',String(best));bestEl.textContent=`Best: ${best}`;} if(navigator.vibrate) navigator.vibrate([30,25,50]); stateEl.textContent=`${msg} Тапни для рестарта.`; draw(); }
+
+  function spawnShot(){
+    const a=Math.random()*Math.PI*2;
+    const d=ringR+130;
+    shots.push({x:cx+Math.cos(a)*d,y:cy+Math.sin(a)*d,vx:-Math.cos(a)*(120+Math.random()*60),vy:-Math.sin(a)*(120+Math.random()*60),r:6+Math.random()*6});
+  }
+
+  function loop(ts){
+    if(!running) return;
+    const dt=Math.min((ts-last)/1000,0.033); last=ts;
+    tLeft-=dt; if(tLeft<=0) return end(`Время! Счёт: ${Math.floor(score)}`);
+
+    angle += dir*speed*dt;
+    spawn += dt;
+    if(spawn>0.35){spawn=0;spawnShot();}
+
+    for(const s of shots){ s.x += s.vx*dt; s.y += s.vy*dt; }
+    shots = shots.filter(s => s.x>-40&&s.x<W+40&&s.y>-40&&s.y<H+40);
+
+    const px = cx + Math.cos(angle)*ringR;
+    const py = cy + Math.sin(angle)*ringR;
+    for(const s of shots){
+      const dx=px-s.x, dy=py-s.y;
+      if(dx*dx+dy*dy < (playerR+s.r)*(playerR+s.r)) return end(`Столкновение! Счёт: ${Math.floor(score)}`);
+    }
+
+    score += dt*3 + Math.abs(dir)*dt;
+    scoreEl.textContent=`Score: ${Math.floor(score)}`;
+    timeEl.textContent=`Time: ${tLeft.toFixed(1)}s`;
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const g=ctx.createRadialGradient(cx,cy,20,cx,cy,300);g.addColorStop(0,'#0f172a');g.addColorStop(1,'#020617');
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle='rgba(148,163,184,.35)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,ringR,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(cx,cy,16,0,Math.PI*2);ctx.fill();
+
+    for(const s of shots){ ctx.fillStyle='#ef4444';ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill(); }
+    const px = cx + Math.cos(angle)*ringR;
+    const py = cy + Math.sin(angle)*ringR;
+    ctx.fillStyle='#a78bfa';ctx.beginPath();ctx.arc(px,py,playerR,0,Math.PI*2);ctx.fill();
+
+    if(!running){
+      ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#e2e8f0';ctx.font='700 30px Inter';ctx.textAlign='center';ctx.fillText('Thumb Orbit',cx,cy-8);
+      ctx.font='500 17px Inter';ctx.fillText('Tap/hold left or right side',cx,cy+20);
+    }
+  }
+
+  function setDirFromX(x){ dir = (x < canvas.getBoundingClientRect().left + canvas.clientWidth/2) ? -1 : 1; }
+
+  canvas.addEventListener('pointerdown', (e)=>{ if(!running){reset();return;} setDirFromX(e.clientX); canvas.setPointerCapture?.(e.pointerId); });
+  canvas.addEventListener('pointermove', (e)=>{ if(!running) return; if(e.buttons||e.pressure>0) setDirFromX(e.clientX); });
+  canvas.addEventListener('pointerup', ()=>{ dir=0; });
+  canvas.addEventListener('pointercancel', ()=>{ dir=0; });
+
+  window.addEventListener('keydown',(e)=>{ if(e.code==='ArrowLeft'||e.code==='KeyA') dir=-1; if(e.code==='ArrowRight'||e.code==='KeyD') dir=1; if(e.code==='Space'&&!running){e.preventDefault();reset();} });
+  window.addEventListener('keyup',(e)=>{ if(['ArrowLeft','KeyA','ArrowRight','KeyD'].includes(e.code)) dir=0; });
+  startBtn.addEventListener('click', ()=>reset());
+  draw();
+})();
+</script>
+</body>
+</html>

@@ -28,11 +28,11 @@ Pick the top idea as **TODAY_MVP**.
 ## Current focus (seed)
 
 ### TODAY_MVP (candidate)
-- Idea: **Thumb Orbit**
-- Why: one-thumb control, fast rounds, strong retry loop
+- Idea: **Lane Surfer**
+- Why: ultra-readable touch control, very fast polishing path
 - Complexity: low
 - Priority: high
-- Next test (2–4h): implement core loop + score + restart
+- Next test (2–4h): lane-switch core + obstacle pacing + retry loop
 
 ### BACKLOG
 1. Lane Surfer (tap to switch lanes, avoid obstacles)
@@ -42,3 +42,4 @@ Pick the top idea as **TODAY_MVP**.
 ## Done log
 
 - 2026-03-13: Signal Dash demo shipped (mobile controls + tap start + vibro + local top-5)
+- 2026-03-13: Thumb Orbit MVP shipped in `demos/thumb-orbit/` (one-thumb hold controls, 30s loop, local best, vibro)

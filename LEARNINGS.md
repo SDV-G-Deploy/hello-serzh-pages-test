@@ -26,3 +26,16 @@ New rule:
 
 Next:
 - Add lightweight analytics-ready hooks (start/restart/game-over events) for future tuning.
+
+## 2026-03-13 (test flow run)
+
+- Ran digest→MVP test flow and selected `Thumb Orbit` for one-thumb mobile play.
+- Created prompt-plan at `demos/thumb-orbit/PROMPT_PLAN.md`.
+- Shipped playable MVP at `demos/thumb-orbit/index.html`.
+- Added Thumb Orbit link to `games.html` and updated roadmap done log.
+
+New rule:
+- For autopipeline runs, always create `demos/<slug>/PROMPT_PLAN.md` before implementation.
+
+Next:
+- Add minimal event hooks and simple balancing constants block for faster daily iterations.
