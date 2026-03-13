@@ -39,3 +39,13 @@ New rule:
 
 Next:
 - Add minimal event hooks and simple balancing constants block for faster daily iterations.
+
+## 2026-03-13 (v2 balance)
+
+- Upgraded Thumb Orbit to v2 with A/B balance presets:
+  - A: комфортный ритм
+  - B: более интенсивный спавн/скорость
+- Added separate local best score per preset (`thumbOrbitBest_A`, `thumbOrbitBest_B`).
+
+New rule:
+- For quick game balancing, expose core constants as mode presets before deeper refactors.
