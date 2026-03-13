@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lane Surfer</title>
+  <style>
+    :root{--bg:#090f1d;--card:#111b34;--text:#e7efff;--muted:#9cb2de;--acc:#60a5fa;--warn:#fb7185;--ok:#34d399}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--text);background:radial-gradient(circle at 50% -20%,#1a2d5a,var(--bg));}
+    .wrap{max-width:430px;margin:0 auto;padding:12px}
+    .card{background:rgba(17,27,52,.92);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:12px;margin-bottom:10px}
+    h1{margin:0 0 4px;font-size:21px}.sub{margin:0;color:var(--muted);font-size:13px}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .stat{background:#0d152b;border-radius:10px;padding:8px;font-size:12px;text-align:center}
+    .stat b{display:block;font-size:16px;margin-top:3px}
+
+    #field{position:relative;height:460px;border-radius:12px;overflow:hidden;background:linear-gradient(180deg,#0a1328,#081022);border:1px solid rgba(255,255,255,.12)}
+    .lane{position:absolute;top:0;bottom:0;width:33.333%;border-right:1px dashed rgba(255,255,255,.08)}
+    .lane:last-child{border-right:0}
+    .player{position:absolute;bottom:20px;width:58px;height:58px;border-radius:12px;background:linear-gradient(135deg,#60a5fa,#34d399);left:50%;transform:translateX(-50%);box-shadow:0 8px 20px rgba(96,165,250,.35)}
+    .ob{position:absolute;width:52px;height:52px;border-radius:10px;background:linear-gradient(135deg,#f43f5e,#fb7185);box-shadow:0 6px 14px rgba(251,113,133,.35)}
+
+    .controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+    button{border:0;border-radius:12px;padding:12px;font-weight:800;font-size:16px;color:#0b1327;background:linear-gradient(135deg,#93c5fd,#34d399)}
+    button:active{transform:translateY(1px)}
+    #start{width:100%;margin-top:10px}
+    .hint{margin-top:8px;font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Lane Surfer</h1>
+    <p class="sub">30 секунд. Уходи от блоков, держи combo и бей рекорд.</p>
+  </div>
+
+  <div class="card stats">
+    <div class="stat">⏱<b id="time">30</b></div>
+    <div class="stat">🏁<b id="score">0</b></div>
+    <div class="stat">🔥<b id="combo">0</b></div>
+    <div class="stat">🏆<b id="best">0</b></div>
+  </div>
+
+  <div class="card">
+    <div id="field">
+      <div class="lane" style="left:0"></div>
+      <div class="lane" style="left:33.333%"></div>
+      <div class="lane" style="left:66.666%"></div>
+      <div id="player" class="player"></div>
+    </div>
+    <div class="controls">
+      <button id="left">◀ LEFT</button>
+      <button id="right">RIGHT ▶</button>
+    </div>
+    <button id="start">Старт</button>
+    <div id="hint" class="hint">Тапни Старт, потом управляй кнопками.</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const lanes = [0,1,2];
+  const laneCenters = ['16.666%','50%','83.333%'];
+  const state = {
+    running:false,time:30,score:0,combo:0,lane:1,
+    obstacles:[],spawnEvery:700,lastSpawn:0,speed:2.8,frame:0,nextPatternAt:0,pattern:0
+  };
+  const el = id => document.getElementById(id);
+  const ui = {time:el('time'),score:el('score'),combo:el('combo'),best:el('best'),hint:el('hint'),field:el('field'),player:el('player')};
+
+  function best(){ return +(localStorage.getItem('laneSurferBest')||0); }
+  function setBest(v){ localStorage.setItem('laneSurferBest', String(v)); }
+
+  function updateHUD(){ ui.time.textContent=state.time; ui.score.textContent=state.score; ui.combo.textContent=state.combo; ui.best.textContent=best(); }
+  function setLane(i){ state.lane=Math.max(0,Math.min(2,i)); ui.player.style.left=laneCenters[state.lane]; }
+
+  function spawnObstacle(){
+    const ob = document.createElement('div'); ob.className='ob';
+    let lane;
+    if(state.pattern===0){ lane = Math.floor(Math.random()*3); }
+    else if(state.pattern===1){ lane = (state.frame % 2 === 0) ? 0 : 2; }
+    else { lane = [0,1,2][Math.floor(Math.random()*3)]; }
+    ob.dataset.lane=lane;
+    ob.style.left = `calc(${laneCenters[lane]} - 26px)`;
+    ob.style.top = '-54px';
+    ui.field.appendChild(ob);
+    state.obstacles.push({el:ob,lane,y:-54,passed:false});
+  }
+
+  function move(){
+    const playerYTop = 460 - 20 - 58;
+    for(let i=state.obstacles.length-1;i>=0;i--){
+      const o = state.obstacles[i];
+      o.y += state.speed;
+      o.el.style.top = o.y+'px';
+
+      const collideY = o.y + 52 >= playerYTop && o.y <= playerYTop + 58;
+      if(collideY && o.lane===state.lane){
+        state.combo = 0;
+        state.score = Math.max(0,state.score-2);
+        ui.field.style.boxShadow='0 0 0 2px rgba(251,113,133,.7) inset';
+        setTimeout(()=>ui.field.style.boxShadow='none',120);
+        o.el.remove(); state.obstacles.splice(i,1);
+        continue;
+      }
+
+      if(!o.passed && o.y > playerYTop + 58){
+        o.passed = true;
+        state.combo += 1;
+        state.score += 1 + (state.combo % 5 === 0 ? 1 : 0);
+      }
+
+      if(o.y > 480){ o.el.remove(); state.obstacles.splice(i,1); }
+    }
+  }
+
+  function loop(ts){
+    if(!state.running) return;
+    if(!state.lastSpawn) state.lastSpawn=ts;
+    if(ts - state.lastSpawn >= state.spawnEvery){
+      spawnObstacle(); state.lastSpawn = ts;
+    }
+
+    if(ts >= state.nextPatternAt){
+      state.pattern = (state.pattern + 1) % 3;
+      state.nextPatternAt = ts + 8000;
+      state.speed = Math.min(5.2, state.speed + 0.35);
+      state.spawnEvery = Math.max(420, state.spawnEvery - 40);
+    }
+
+    move();
+    updateHUD();
+    state.frame++;
+    requestAnimationFrame(loop);
+  }
+
+  function clearRun(){ state.obstacles.forEach(o=>o.el.remove()); state.obstacles=[]; }
+
+  function start(){
+    clearRun();
+    state.running=true; state.time=30; state.score=0; state.combo=0; state.lane=1;
+    state.spawnEvery=700; state.lastSpawn=0; state.speed=2.8; state.frame=0; state.pattern=0; state.nextPatternAt=performance.now()+8000;
+    setLane(1); updateHUD();
+    ui.hint.textContent='Держи ритм: dodge = combo, удар = -2 и сброс combo.';
+
+    const timer = setInterval(()=>{
+      state.time--; updateHUD();
+      if(state.time<=0){
+        clearInterval(timer);
+        state.running=false;
+        if(state.score>best()) setBest(state.score);
+        updateHUD();
+        ui.hint.textContent = `Финиш: ${state.score} очков, combo ${state.combo}. Тапни Старт ещё раз.`;
+      }
+    },1000);
+
+    requestAnimationFrame(loop);
+  }
+
+  el('left').addEventListener('click',()=>setLane(state.lane-1));
+  el('right').addEventListener('click',()=>setLane(state.lane+1));
+  el('start').addEventListener('click',start);
+
+  setLane(1); updateHUD();
+})();
+</script>
+</body>
+</html>

@@ -82,3 +82,20 @@ New rule:
 
 Next:
 - Add tiny event hooks (`run_start`, `shot_hit`, `shot_miss`, `run_end`) for future lightweight telemetry.
+
+## 2026-03-13 (lane runner MVP)
+
+- Implemented `demos/lane-surfer/index.html` as a mobile-first 30s runner.
+- Added touch-only lane controls (left/right), 3 obstacle patterns, and slight difficulty ramp.
+- Added combo mechanic and bonus scoring every 5 combo.
+- Added local best score persistence and integrated new card into `games.html`.
+
+What worked:
+- 30s cap keeps session tight and replay-friendly.
+- Simple pattern rotation gives variety without heavy complexity.
+
+New rule:
+- Runner MVPs should ship with at least 3 spawn patterns + one visible progression lever (speed or spawn rate).
+
+Next:
+- Add micro-hit feedback for near-miss moments and optional haptic pulse on combo milestones.

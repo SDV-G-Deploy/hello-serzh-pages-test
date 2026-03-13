@@ -30,11 +30,11 @@ SLA: one daily digest run should produce one new playable MVP link.
 ## Current focus (seed)
 
 ### TODAY_MVP (candidate)
-- Idea: **Lane Surfer**
-- Why: очень быстрый раннер-loop, удобно тестировать tempo на мобилке
+- Idea: **Pulse Catcher**
+- Why: отлично подходит для коротких сессий на реакцию + rhythm retention
 - Complexity: low
 - Priority: high
-- Next test (2–4h): 30s loop + 3 паттерна препятствий + combo streak
+- Next test (2–4h): 45s tap window + accuracy tiers + streak multiplier
 
 ### BACKLOG
 1. Lane Surfer (tap to switch lanes, avoid obstacles)
@@ -44,6 +44,7 @@ SLA: one daily digest run should produce one new playable MVP link.
 
 ## Done log
 
+- 2026-03-13: Lane Surfer MVP shipped in `demos/lane-surfer/` (30s one-thumb runner, 3 obstacle patterns, combo bonus, local best)
 - 2026-03-13: Fair Shot Arena MVP shipped in `demos/fair-shot-arena/` (A/B RNG fairness test, 45s loop, local best per mode, miss-streak metric)
 - 2026-03-13: Signal Dash demo shipped (mobile controls + tap start + vibro + local top-5)
 - 2026-03-13: Thumb Orbit MVP shipped in `demos/thumb-orbit/` (one-thumb hold controls, 30s loop, local best, vibro)
