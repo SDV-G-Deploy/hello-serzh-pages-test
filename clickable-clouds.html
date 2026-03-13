@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Снежана ⚡ — Нажимаемые облачка</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <style>
+    .cloud-page{display:grid;gap:14px}
+    .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+    .stats{display:flex;gap:8px;flex-wrap:wrap}
+    .pill{display:inline-block;padding:5px 10px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(255,255,255,.06);font-size:14px}
+    .btn{appearance:none;border:1px solid rgba(255,255,255,.25);color:white;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
+
+    .cloud-scene{
+      position:relative;
+      min-height:58svh;
+      border:1px solid rgba(255,255,255,.2);
+      border-radius:16px;
+      background:linear-gradient(180deg, rgba(147,197,253,.08), rgba(99,102,241,.06));
+      overflow:hidden;
+      isolation:isolate;
+    }
+
+    .cloud{
+      position:absolute;
+      border:none;
+      color:#f8fbff;
+      font-weight:700;
+      border-radius:999px;
+      cursor:pointer;
+      box-shadow:0 10px 20px rgba(0,0,0,.22), inset 0 -6px 14px rgba(0,0,0,.16), inset 0 6px 10px rgba(255,255,255,.18);
+      transition:filter .24s ease, transform .24s ease;
+      animation:drift var(--dur,11s) ease-in-out infinite;
+      animation-delay:var(--delay,0s);
+      background:radial-gradient(120% 110% at 30% 20%, rgba(255,255,255,.55), rgba(255,255,255,.18) 45%, rgba(129,140,248,.26) 100%);
+    }
+    .cloud::before,
+    .cloud::after{
+      content:"";
+      position:absolute;
+      border-radius:50%;
+      background:inherit;
+      box-shadow:inherit;
+      z-index:-1;
+    }
+    .cloud::before{width:42%;height:65%;left:12%;top:-28%}
+    .cloud::after{width:38%;height:58%;right:12%;top:-24%}
+
+    .cloud:focus-visible{outline:2px solid #fff; outline-offset:2px}
+    .cloud.pop{animation:click-pop .4s cubic-bezier(.2,.9,.25,1.3), drift var(--dur,11s) ease-in-out infinite}
+
+    .spark{
+      position:absolute;
+      width:8px;height:8px;
+      border-radius:2px;
+      background:#fef08a;
+      box-shadow:0 0 12px rgba(254,240,138,.6);
+      pointer-events:none;
+      animation:spark .65s ease-out forwards;
+    }
+
+    @keyframes drift{
+      0%,100%{transform:translate3d(0,0,0)}
+      25%{transform:translate3d(var(--dx,8px),-8px,0)}
+      50%{transform:translate3d(calc(var(--dx,8px) * -1),4px,0)}
+      75%{transform:translate3d(calc(var(--dx,8px) * .6),-6px,0)}
+    }
+    @keyframes click-pop{
+      0%{transform:scale(1) translateY(0)}
+      35%{transform:scale(1.11) translateY(-4px)}
+      70%{transform:scale(.98) translateY(1px)}
+      100%{transform:scale(1) translateY(0)}
+    }
+    @keyframes spark{
+      from{transform:translate(0,0) scale(1) rotate(0deg);opacity:.95}
+      to{transform:translate(var(--tx),var(--ty)) scale(.2) rotate(120deg);opacity:0}
+    }
+
+    .sr-live{position:absolute;left:-9999px}
+
+    @media (prefers-reduced-motion: reduce){
+      .cloud{animation:none;transition:none}
+      .cloud.pop{animation:none}
+      .spark{display:none}
+    }
+
+    @media (max-width:720px){
+      .cloud-scene{min-height:64svh}
+      .pill{font-size:13px}
+    }
+  </style>
+</head>
+<body>
+<main class="container">
+  <nav>
+    <a href="./index.html">Home</a>
+    <a href="./about.html">About</a>
+    <a href="./projects.html">Projects</a>
+    <a href="./games.html">GaMeS</a>
+    <a class="active" href="./clickable-clouds.html">Clouds</a>
+    <a href="./notes.html">Notes</a>
+  </nav>
+
+  <section class="card cloud-page">
+    <h1>Нажимаемые облачка ☁️</h1>
+    <p>Тапай по облачкам: собирай клики и держи streak. Чем быстрее ритм — тем длиннее серия.</p>
+
+    <div class="toolbar">
+      <div class="stats" aria-live="polite" id="hud">
+        <span class="pill">Клики: <strong id="clicks">0</strong></span>
+        <span class="pill">Streak: <strong id="streak">0</strong></span>
+        <span class="pill">Best: <strong id="best">0</strong></span>
+      </div>
+      <button class="btn" id="shuffleBtn" type="button">Перемешать облака</button>
+    </div>
+
+    <div class="cloud-scene" id="scene" aria-label="Игровое поле с облаками"></div>
+    <div class="sr-live" aria-live="polite" id="liveRegion"></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const scene = document.getElementById('scene');
+  const clicksEl = document.getElementById('clicks');
+  const streakEl = document.getElementById('streak');
+  const bestEl = document.getElementById('best');
+  const liveRegion = document.getElementById('liveRegion');
+  const shuffleBtn = document.getElementById('shuffleBtn');
+
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const STREAK_WINDOW_MS = 1200;
+  const CLOUD_COUNT = 11;
+  let clicks = 0;
+  let streak = 0;
+  let best = 0;
+  let lastClickTs = 0;
+
+  function rand(min, max){ return Math.random() * (max - min) + min; }
+  function int(min, max){ return Math.floor(rand(min, max + 1)); }
+
+  function updateHud(){
+    clicksEl.textContent = String(clicks);
+    streakEl.textContent = String(streak);
+    bestEl.textContent = String(best);
+  }
+
+  function emitSparks(x, y){
+    if (reducedMotion) return;
+    const amount = int(6, 10);
+    for(let i = 0; i < amount; i++){
+      const s = document.createElement('span');
+      s.className = 'spark';
+      const angle = rand(0, Math.PI * 2);
+      const dist = rand(18, 42);
+      s.style.left = `${x}px`;
+      s.style.top = `${y}px`;
+      s.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
+      s.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
+      s.style.background = `hsl(${int(45, 62)} 98% ${int(65, 78)}%)`;
+      scene.appendChild(s);
+      setTimeout(() => s.remove(), 700);
+    }
+  }
+
+  function cloudTone(cloud){
+    cloud.style.filter = `hue-rotate(${int(-20, 22)}deg) saturate(${rand(0.95, 1.2).toFixed(2)})`;
+  }
+
+  function onCloudTap(ev){
+    const now = performance.now();
+    clicks += 1;
+    streak = (now - lastClickTs <= STREAK_WINDOW_MS) ? streak + 1 : 1;
+    lastClickTs = now;
+    best = Math.max(best, streak);
+    updateHud();
+
+    const cloud = ev.currentTarget;
+    cloud.classList.remove('pop');
+    void cloud.offsetWidth;
+    if (!reducedMotion) cloud.classList.add('pop');
+
+    const rect = scene.getBoundingClientRect();
+    const x = (ev.clientX || rect.left + cloud.offsetLeft + cloud.offsetWidth / 2) - rect.left;
+    const y = (ev.clientY || rect.top + cloud.offsetTop + cloud.offsetHeight / 2) - rect.top;
+    emitSparks(x, y);
+    cloudTone(cloud);
+    liveRegion.textContent = `Клик ${clicks}, streak ${streak}`;
+  }
+
+  function createCloud(label){
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cloud';
+    btn.textContent = label;
+    btn.setAttribute('aria-label', `Облачко ${label}`);
+    btn.addEventListener('click', onCloudTap);
+    return btn;
+  }
+
+  function layoutClouds(){
+    const w = scene.clientWidth;
+    const h = scene.clientHeight;
+    const names = ['Пух', 'Блик', 'Лайт', 'Нимб', 'Флоу', 'Мист', 'Зефир', 'Глим', 'Луна', 'Дрифт', 'Скай', 'Сноу'];
+
+    scene.innerHTML = '';
+    for(let i = 0; i < CLOUD_COUNT; i++){
+      const cloud = createCloud(names[i % names.length]);
+      const size = int(76, 144);
+      const left = rand(4, Math.max(6, w - size - 8));
+      const top = rand(8, Math.max(10, h - size * 0.75 - 8));
+      cloud.style.width = `${size}px`;
+      cloud.style.height = `${Math.round(size * 0.62)}px`;
+      cloud.style.left = `${left}px`;
+      cloud.style.top = `${top}px`;
+      cloud.style.fontSize = `${Math.round(size / 7.4)}px`;
+      cloud.style.setProperty('--dx', `${int(4, 18)}px`);
+      cloud.style.setProperty('--dur', `${rand(6.5, 14).toFixed(2)}s`);
+      cloud.style.setProperty('--delay', `${rand(0, 2.5).toFixed(2)}s`);
+      cloudTone(cloud);
+      scene.appendChild(cloud);
+    }
+  }
+
+  shuffleBtn.addEventListener('click', () => {
+    streak = 0;
+    updateHud();
+    layoutClouds();
+    liveRegion.textContent = 'Облака перемешаны';
+  });
+
+  window.addEventListener('resize', () => layoutClouds());
+  updateHud();
+  layoutClouds();
+})();
+</script>
+</body>
+</html>
