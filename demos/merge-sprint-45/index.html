@@ -13,11 +13,15 @@
     .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
     .stat{background:#0d152b;border-radius:10px;padding:8px;font-size:12px;text-align:center}.stat b{display:block;font-size:16px;margin-top:3px}
     .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-    .cell{aspect-ratio:1;border:1px solid rgba(255,255,255,.2);border-radius:12px;background:#132247;color:#fff;font-weight:800;font-size:24px;display:flex;align-items:center;justify-content:center}
+    .cell{aspect-ratio:1;border:1px solid rgba(255,255,255,.2);border-radius:12px;background:#132247;color:#fff;font-weight:800;font-size:24px;display:flex;align-items:center;justify-content:center;position:relative}
     .lv1{background:#1e3a8a}.lv2{background:#2563eb}.lv3{background:#0891b2}.lv4{background:#0d9488}.lv5{background:#16a34a}.lv6{background:#65a30d}.lv7{background:#ca8a04}.lv8{background:#ea580c}.lv9{background:#dc2626}
+    .hint-cell{outline:3px solid rgba(255,255,255,.82); box-shadow:0 0 0 4px rgba(96,165,250,.35) inset}
+    .hint-badge{position:absolute;right:6px;top:6px;font-size:10px;padding:2px 5px;border-radius:999px;background:rgba(255,255,255,.9);color:#0a1020;font-weight:900}
     button{width:100%;border:0;border-radius:12px;padding:12px;font-weight:800;font-size:16px;color:#081123;background:linear-gradient(135deg,#93c5fd,#34d399)}
     #start{margin-top:8px;background:linear-gradient(135deg,#a78bfa,#60a5fa)}
     #msg{margin-top:8px;font-size:12px;color:var(--muted);min-height:18px}
+    .legend{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:11px;color:var(--muted)}
+    .dot{width:10px;height:10px;border-radius:50%}.dot.h{background:#fff}.dot.c{background:#60a5fa}
   </style>
 </head>
 <body>
@@ -32,11 +36,12 @@
     <div id="grid" class="grid"></div>
     <button id="start">Старт</button>
     <div id="msg">Тап по клетке повышает её уровень. Одинаковые соседние уровни сливаются.</div>
+    <div class="legend"><span class="dot h"></span>Подсветка = лучший следующий ход</div>
   </div>
 </div>
 <script>
 (() => {
-  const s={running:false,time:45,score:0,board:Array(9).fill(1)};
+  const s={running:false,time:45,score:0,board:Array(9).fill(1),hintIdx:null,taps:0};
   const el=id=>document.getElementById(id);
   const ui={time:el('time'),score:el('score'),best:el('best'),grid:el('grid'),msg:el('msg')};
   const best=()=>+(localStorage.getItem('mergeSprint45Best')||0);
@@ -44,21 +49,38 @@
 
   function hud(){ui.time.textContent=s.time;ui.score.textContent=s.score;ui.best.textContent=best();}
   function classFor(lv){return 'cell lv'+Math.min(lv,9)}
-  function draw(){
-    ui.grid.innerHTML='';
-    s.board.forEach((lv,i)=>{
-      const b=document.createElement('button');
-      b.className=classFor(lv);
-      b.textContent=String(lv);
-      b.onclick=()=>tap(i);
-      ui.grid.appendChild(b);
-    });
-  }
 
   function neigh(i){
     const r=Math.floor(i/3), c=i%3, out=[];
     if(r>0) out.push(i-3); if(r<2) out.push(i+3); if(c>0) out.push(i-1); if(c<2) out.push(i+1);
     return out;
+  }
+
+  function pickBestMove(){
+    let bestI=0, bestScore=-1;
+    for(let i=0;i<9;i++){
+      const next=Math.min(9,s.board[i]+1);
+      let score=0;
+      for(const n of neigh(i)) if(s.board[n]===next) score += 2;
+      if(s.board[i]===1) score += 0.3;
+      score += Math.random()*0.01;
+      if(score>bestScore){bestScore=score;bestI=i;}
+    }
+    s.hintIdx=bestI;
+  }
+
+  function draw(){
+    ui.grid.innerHTML='';
+    s.board.forEach((lv,i)=>{
+      const b=document.createElement('button');
+      b.className=classFor(lv) + (s.running && i===s.hintIdx ? ' hint-cell' : '');
+      b.textContent=String(lv);
+      if(s.running && i===s.hintIdx){
+        const tag=document.createElement('span'); tag.className='hint-badge'; tag.textContent='HINT'; b.appendChild(tag);
+      }
+      b.onclick=()=>tap(i);
+      ui.grid.appendChild(b);
+    });
   }
 
   function mergeStep(){
@@ -85,6 +107,12 @@
     return toUp.size;
   }
 
+  function tutorialText(){
+    if(s.taps===0) return 'Шаг 1/2: тапни по подсвеченной клетке (HINT).';
+    if(s.taps===1) return 'Шаг 2/2: снова тапни HINT, чтобы запустить merge-цепочку.';
+    return null;
+  }
+
   function tap(i){
     if(!s.running) return;
     s.board[i] = Math.min(9, s.board[i]+1);
@@ -95,14 +123,27 @@
       if(!m) break;
       chains += m;
     }
-    if(chains>0) ui.msg.textContent = `Chain x${chains} • +merge bonus`; else ui.msg.textContent='+';
+    s.taps += 1;
+    const tut=tutorialText();
+    if(tut){
+      ui.msg.textContent = tut;
+    } else if(chains>0){
+      ui.msg.textContent = `Chain x${chains} • +merge bonus`;
+    } else {
+      ui.msg.textContent = 'Наращивай пары рядом для цепочек';
+    }
+    pickBestMove();
     hud(); draw();
   }
 
-  function reset(){ s.time=45; s.score=0; s.board=Array.from({length:9},()=>1+Math.floor(Math.random()*2)); }
+  function reset(){
+    s.time=45; s.score=0; s.taps=0;
+    s.board=[1,2,1,2,1,2,1,2,1];
+    pickBestMove();
+  }
 
   function start(){
-    reset(); s.running=true; hud(); draw(); ui.msg.textContent='Go!';
+    reset(); s.running=true; hud(); draw(); ui.msg.textContent='Шаг 1/2: тапни по подсвеченной клетке (HINT).';
     const t=setInterval(()=>{
       if(!s.running){clearInterval(t);return;}
       s.time--; hud();
@@ -110,6 +151,7 @@
         clearInterval(t); s.running=false;
         if(s.score>best()) setBest(s.score);
         hud(); ui.msg.textContent=`Финиш: ${s.score}. Нажми Старт для новой попытки.`;
+        s.hintIdx=null; draw();
       }
     },1000);
   }

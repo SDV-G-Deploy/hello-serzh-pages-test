@@ -150,3 +150,12 @@ New rule:
 
 Next:
 - Add small “next best move hint” pulse for onboarding in first 10 seconds.
+
+## 2026-03-13 (merge sprint onboarding v2)
+
+- Added in-game onboarding for `merge-sprint-45` (2-step tutorial messages).
+- Added dynamic best-move hint (`HINT` cell highlight) to improve first-session readability.
+- Added starter board pattern to make first two taps understandable before random play emerges.
+
+New rule:
+- For puzzle MVPs, include first-10-seconds onboarding directly in HUD, not only in external explanation.
