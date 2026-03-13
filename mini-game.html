@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signal Dash — mini-game</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <style>
+    .game-wrap{display:grid;gap:14px;max-width:780px}
+    canvas{width:100%;max-width:760px;height:auto;border:1px solid rgba(255,255,255,.2);border-radius:12px;background:#0b1020;display:block}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .btn{appearance:none;border:1px solid rgba(255,255,255,.25);color:white;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
+    .muted{color:var(--muted)}
+    .pill{display:inline-block;padding:4px 10px;border:1px solid rgba(255,255,255,.2);border-radius:999px;background:rgba(255,255,255,.06)}
+  </style>
+</head>
+<body>
+<main class="container">
+  <nav>
+    <a href="./index.html">Home</a>
+    <a href="./about.html">About</a>
+    <a href="./projects.html">Projects</a>
+    <a class="active" href="./games.html">GaMeS</a>
+    <a href="./notes.html">Notes</a>
+  </nav>
+
+  <section class="card game-wrap">
+    <h1>Signal Dash</h1>
+    <p>Короткая аркада на 30 секунд: избегай красных блоков и собирай голубые импульсы.</p>
+
+    <div class="row">
+      <span class="pill">← → / A D — движение</span>
+      <span class="pill">Space — старт/рестарт</span>
+      <span class="pill" id="best">Best: 0</span>
+    </div>
+
+    <canvas id="game" width="760" height="420" aria-label="Signal Dash canvas"></canvas>
+
+    <div class="row">
+      <button class="btn" id="startBtn">Старт / Рестарт</button>
+      <strong id="score">Score: 0</strong>
+      <strong id="time">Time: 30.0s</strong>
+      <span class="muted" id="state">Нажми Space или кнопку, чтобы начать.</span>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const timeEl = document.getElementById('time');
+  const stateEl = document.getElementById('state');
+  const bestEl = document.getElementById('best');
+  const startBtn = document.getElementById('startBtn');
+
+  const W = canvas.width, H = canvas.height;
+  const player = { x: W/2 - 18, y: H - 44, w: 36, h: 20, speed: 360 };
+  let keys = { left:false, right:false };
+  let obstacles = [], pickups = [];
+  let score = 0, best = Number(localStorage.getItem('signalDashBest') || 0);
+  let timeLeft = 30, running = false, spawnT = 0, pickupT = 0, last = 0;
+
+  bestEl.textContent = `Best: ${best}`;
+
+  function reset() {
+    player.x = W/2 - player.w/2;
+    obstacles = [];
+    pickups = [];
+    score = 0;
+    timeLeft = 30;
+    spawnT = 0;
+    pickupT = 0;
+    scoreEl.textContent = 'Score: 0';
+    timeEl.textContent = 'Time: 30.0s';
+    stateEl.textContent = 'Игра пошла!';
+  }
+
+  function start() {
+    reset();
+    running = true;
+    last = performance.now();
+    requestAnimationFrame(loop);
+  }
+
+  function end(msg) {
+    running = false;
+    if (score > best) {
+      best = score;
+      localStorage.setItem('signalDashBest', String(best));
+      bestEl.textContent = `Best: ${best}`;
+    }
+    stateEl.textContent = msg + ' Нажми Space для рестарта.';
+  }
+
+  function spawnObstacle() {
+    const w = 24 + Math.random()*36;
+    obstacles.push({ x: Math.random()*(W-w), y: -26, w, h: 20, vy: 160 + Math.random()*160 });
+  }
+
+  function spawnPickup() {
+    pickups.push({ x: 14 + Math.random()*(W-28), y: -16, r: 8, vy: 180 });
+  }
+
+  function hitRect(a,b){
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  }
+
+  function loop(ts) {
+    if (!running) { draw(); return; }
+    const dt = Math.min(0.032, (ts - last)/1000);
+    last = ts;
+
+    timeLeft -= dt;
+    if (timeLeft <= 0) return end(`Время вышло! Финальный счёт: ${score}`);
+
+    if (keys.left) player.x -= player.speed * dt;
+    if (keys.right) player.x += player.speed * dt;
+    player.x = Math.max(0, Math.min(W - player.w, player.x));
+
+    spawnT += dt;
+    pickupT += dt;
+    if (spawnT >= 0.42) { spawnT = 0; spawnObstacle(); }
+    if (pickupT >= 0.9) { pickupT = 0; spawnPickup(); }
+
+    for (const o of obstacles) o.y += o.vy * dt;
+    for (const p of pickups) p.y += p.vy * dt;
+
+    obstacles = obstacles.filter(o => o.y < H + 30);
+    pickups = pickups.filter(p => p.y < H + 20);
+
+    for (const o of obstacles) {
+      if (hitRect(player, o)) return end(`Столкновение! Финальный счёт: ${score}`);
+    }
+
+    pickups = pickups.filter(p => {
+      const box = { x:p.x-p.r, y:p.y-p.r, w:p.r*2, h:p.r*2 };
+      if (hitRect(player, box)) { score += 3; return false; }
+      return true;
+    });
+
+    score += dt * 2;
+
+    scoreEl.textContent = `Score: ${Math.floor(score)}`;
+    timeEl.textContent = `Time: ${timeLeft.toFixed(1)}s`;
+
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function draw() {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#0c1428');
+    g.addColorStop(1, '#070b16');
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
+
+    ctx.strokeStyle = 'rgba(125,211,252,.2)';
+    ctx.lineWidth = 1;
+    for(let y=20;y<H;y+=32){
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+    }
+
+    ctx.fillStyle = '#22d3ee';
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+
+    ctx.fillStyle = '#ef4444';
+    for (const o of obstacles) ctx.fillRect(o.x, o.y, o.w, o.h);
+
+    ctx.fillStyle = '#38bdf8';
+    for (const p of pickups) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (!running) {
+      ctx.fillStyle = 'rgba(0,0,0,.45)';
+      ctx.fillRect(0,0,W,H);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '700 34px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Signal Dash', W/2, H/2 - 18);
+      ctx.font = '500 18px Inter, sans-serif';
+      ctx.fillText('Space — старт / рестарт', W/2, H/2 + 18);
+    }
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+    if (e.code === 'Space') { e.preventDefault(); if (!running) start(); }
+  });
+  window.addEventListener('keyup', (e) => {
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+  });
+  startBtn.addEventListener('click', () => start());
+
+  draw();
+})();
+</script>
+</body>
+</html>
