@@ -9,8 +9,15 @@
     .cloud-page{display:grid;gap:14px}
     .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
     .stats{display:flex;gap:8px;flex-wrap:wrap}
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
     .pill{display:inline-block;padding:5px 10px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(255,255,255,.06);font-size:14px}
+    .pill strong{display:inline-block;transform:translateZ(0)}
+    .pill.bump strong{animation:hud-bump .26s ease-out}
+    .pill.combo-hot{box-shadow:0 0 0 1px rgba(250,204,21,.5),0 0 14px rgba(250,204,21,.24)}
+
     .btn{appearance:none;border:1px solid rgba(255,255,255,.25);color:white;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
+    .btn.subtle{background:rgba(255,255,255,.08);font-weight:600}
+    .btn[aria-pressed="true"]{background:linear-gradient(135deg,#22c55e,#16a34a)}
 
     .cloud-scene{
       position:relative;
@@ -22,6 +29,7 @@
         linear-gradient(180deg, rgba(147,197,253,.1), rgba(99,102,241,.06));
       overflow:hidden;
       isolation:isolate;
+      touch-action:manipulation;
     }
 
     .cloud{
@@ -44,6 +52,8 @@
       background:
         radial-gradient(80% 90% at 25% 20%, rgba(255,255,255,.85), rgba(255,255,255,.35) 45%, transparent 75%),
         radial-gradient(140% 130% at 35% 20%, rgba(255,255,255,.9), rgba(224,236,255,.9) 48%, rgba(192,214,255,.8) 72%, rgba(173,199,255,.55) 100%);
+      touch-action:manipulation;
+      -webkit-tap-highlight-color:transparent;
     }
     .cloud::before,
     .cloud::after{
@@ -109,6 +119,11 @@
       from{opacity:.98;transform:translate(-50%,-70%) scale(1)}
       to{opacity:0;transform:translate(-50%,-70%) scale(1.2)}
     }
+    @keyframes hud-bump{
+      0%{transform:translateY(0) scale(1);opacity:1}
+      35%{transform:translateY(-2px) scale(1.08);opacity:1}
+      100%{transform:translateY(0) scale(1);opacity:1}
+    }
 
     .sr-live{position:absolute;left:-9999px}
 
@@ -116,6 +131,7 @@
       .cloud{animation:none;transition:none}
       .cloud.pop,.cloud.bursting{animation:none}
       .flash,.bolt{display:none}
+      .pill.bump strong{animation:none}
     }
 
     @media (max-width:720px){
@@ -137,15 +153,19 @@
 
   <section class="card cloud-page">
     <h1>Нажимаемые облачка ☁️</h1>
-    <p>Тапай по облачкам: собирай клики и держи streak. На 3-й клик облачко лопается и вернётся через 5 секунд.</p>
+    <p>Тапай по облачкам. Формула очков: <strong>+10 × combo</strong> за клик и <strong>+35 × combo</strong> за лопание на 3-м клике.</p>
 
     <div class="toolbar">
       <div class="stats" aria-live="polite" id="hud">
-        <span class="pill">Клики: <strong id="clicks">0</strong></span>
-        <span class="pill">Streak: <strong id="streak">0</strong></span>
+        <span class="pill" id="scorePill">Score: <strong id="score">0</strong></span>
+        <span class="pill" id="comboPill">Combo: <strong id="combo">0</strong></span>
         <span class="pill">Best: <strong id="best">0</strong></span>
       </div>
-      <button class="btn" id="shuffleBtn" type="button">Перемешать облака</button>
+      <div class="controls">
+        <button class="btn subtle" id="soundBtn" type="button" aria-pressed="false">🔇 Sound Off</button>
+        <button class="btn subtle" id="resetBestBtn" type="button" title="Удерживай для сброса рекорда">Reset Best</button>
+        <button class="btn" id="shuffleBtn" type="button">Перемешать облака</button>
+      </div>
     </div>
 
     <div class="cloud-scene" id="scene" aria-label="Игровое поле с облаками"></div>
@@ -156,30 +176,115 @@
 <script>
 (() => {
   const scene = document.getElementById('scene');
-  const clicksEl = document.getElementById('clicks');
-  const streakEl = document.getElementById('streak');
+  const scoreEl = document.getElementById('score');
+  const comboEl = document.getElementById('combo');
   const bestEl = document.getElementById('best');
+  const scorePill = document.getElementById('scorePill');
+  const comboPill = document.getElementById('comboPill');
   const liveRegion = document.getElementById('liveRegion');
   const shuffleBtn = document.getElementById('shuffleBtn');
+  const soundBtn = document.getElementById('soundBtn');
+  const resetBestBtn = document.getElementById('resetBestBtn');
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const STREAK_WINDOW_MS = 1200;
+  const BEST_KEY = 'clickableClouds.best.v2';
   const CLOUD_COUNT = 11;
   const CLOUD_TAP_LIMIT = 3;
   const RESPAWN_MS = 5000;
   const TAP_LOCK_MS = reducedMotion ? 80 : 260;
-  let clicks = 0;
-  let streak = 0;
-  let best = 0;
+  const BASE_COMBO_WINDOW_MS = 1800;
+  const MIN_COMBO_WINDOW_MS = 1200;
+  const BASE_CLICK_POINTS = 10;
+  const BASE_BURST_BONUS = 35;
+
+  let score = 0;
+  let combo = 0;
+  let best = Number(localStorage.getItem(BEST_KEY) || 0);
   let lastClickTs = 0;
+  let gameStartTs = performance.now();
+
+  let audioCtx = null;
+  let soundEnabled = false;
+  let resetBestHoldTimer = null;
 
   function rand(min, max){ return Math.random() * (max - min) + min; }
   function int(min, max){ return Math.floor(rand(min, max + 1)); }
+  function clamp(v, min, max){ return Math.min(max, Math.max(min, v)); }
+
+  function getDifficulty(){
+    const elapsed = (performance.now() - gameStartTs) / 1000;
+    const byTime = elapsed / 95;
+    const byScore = score / 1200;
+    return clamp((byTime + byScore) / 2, 0, 1);
+  }
+
+  function getComboWindowMs(){
+    const t = getDifficulty();
+    return BASE_COMBO_WINDOW_MS - (BASE_COMBO_WINDOW_MS - MIN_COMBO_WINDOW_MS) * t;
+  }
+
+  function pulsePill(pill){
+    if (reducedMotion) return;
+    pill.classList.remove('bump');
+    void pill.offsetWidth;
+    pill.classList.add('bump');
+  }
 
   function updateHud(){
-    clicksEl.textContent = String(clicks);
-    streakEl.textContent = String(streak);
+    scoreEl.textContent = String(score);
+    comboEl.textContent = String(combo);
     bestEl.textContent = String(best);
+
+    comboPill.classList.toggle('combo-hot', combo >= 4);
+    pulsePill(scorePill);
+  }
+
+  function updateBest(){
+    if (score > best){
+      best = score;
+      localStorage.setItem(BEST_KEY, String(best));
+      pulsePill(document.querySelector('.pill:last-child'));
+    }
+  }
+
+  function ensureAudio(){
+    if (!audioCtx) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
+      audioCtx = new Ctx();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+
+  function playTone(freq, duration, gain, type = 'sine', sweep = 0){
+    if (!soundEnabled) return;
+    const ctx = ensureAudio();
+    if (!ctx) return;
+
+    const osc = ctx.createOscillator();
+    const vol = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    if (sweep) osc.frequency.exponentialRampToValueAtTime(Math.max(60, freq + sweep), ctx.currentTime + duration);
+
+    vol.gain.setValueAtTime(0.0001, ctx.currentTime);
+    vol.gain.exponentialRampToValueAtTime(gain, ctx.currentTime + 0.01);
+    vol.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+
+    osc.connect(vol);
+    vol.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration + 0.02);
+  }
+
+  function playClickSfx(){
+    playTone(520, 0.08, 0.018, 'triangle', -120);
+  }
+
+  function playBurstSfx(){
+    playTone(280, 0.12, 0.022, 'sine', -80);
+    playTone(680, 0.09, 0.012, 'triangle', -200);
   }
 
   function emitLightning(x, y){
@@ -210,10 +315,21 @@
     cloud.dataset.locked = isLocked ? '1' : '0';
   }
 
+  function applyCloudDifficulty(cloud){
+    const t = getDifficulty();
+    const baseDur = Number(cloud.dataset.baseDur || 10);
+    const dur = clamp(baseDur * (1 - 0.28 * t), 5.4, 14);
+    const dxBase = Number(cloud.dataset.baseDx || 10);
+    const dx = clamp(dxBase * (1 + 0.22 * t), 5, 20);
+    cloud.style.setProperty('--dur', `${dur.toFixed(2)}s`);
+    cloud.style.setProperty('--dx', `${Math.round(dx)}px`);
+  }
+
   function burstAndRespawn(cloud){
     setTapLock(cloud, true);
     cloud.classList.remove('pop');
     cloud.classList.add('bursting');
+    playBurstSfx();
 
     setTimeout(() => {
       cloud.classList.remove('bursting');
@@ -226,6 +342,7 @@
         cloud.style.opacity = '1';
         cloud.style.transform = '';
         cloud.dataset.clickCount = '0';
+        applyCloudDifficulty(cloud);
         setTapLock(cloud, false);
         liveRegion.textContent = `${cloud.textContent} вернулось`;
       }, RESPAWN_MS);
@@ -237,13 +354,13 @@
     if (cloud.dataset.locked === '1' || cloud.classList.contains('hidden') || cloud.classList.contains('bursting')) return;
 
     setTapLock(cloud, true);
-
     const now = performance.now();
-    clicks += 1;
-    streak = (now - lastClickTs <= STREAK_WINDOW_MS) ? streak + 1 : 1;
+    const comboWindow = getComboWindowMs();
+    combo = (now - lastClickTs <= comboWindow) ? combo + 1 : 1;
     lastClickTs = now;
-    best = Math.max(best, streak);
-    updateHud();
+
+    const clickPoints = BASE_CLICK_POINTS * combo;
+    score += clickPoints;
 
     const rect = scene.getBoundingClientRect();
     const x = (ev.clientX || rect.left + cloud.offsetLeft + cloud.offsetWidth / 2) - rect.left;
@@ -251,6 +368,7 @@
 
     emitLightning(x, y);
     cloudTone(cloud);
+    playClickSfx();
 
     let localClickCount = Number(cloud.dataset.clickCount || '0') + 1;
     cloud.dataset.clickCount = String(localClickCount);
@@ -259,14 +377,24 @@
     void cloud.offsetWidth;
     if (!reducedMotion) cloud.classList.add('pop');
 
+    if (combo > 1) pulsePill(comboPill);
+
     if (localClickCount >= CLOUD_TAP_LIMIT){
+      const burstBonus = BASE_BURST_BONUS * combo;
+      score += burstBonus;
       burstAndRespawn(cloud);
-      liveRegion.textContent = `Клик ${clicks}, streak ${streak}. ${cloud.textContent} лопается`;
+      liveRegion.textContent = `Combo x${combo}. +${clickPoints} и burst +${burstBonus}`;
+      updateBest();
+      updateHud();
       return;
     }
 
+    applyCloudDifficulty(cloud);
     setTimeout(() => setTapLock(cloud, false), TAP_LOCK_MS);
-    liveRegion.textContent = `Клик ${clicks}, streak ${streak}`;
+
+    updateBest();
+    updateHud();
+    liveRegion.textContent = `Combo x${combo}. +${clickPoints} очков`;
   }
 
   function createCloud(label){
@@ -297,22 +425,67 @@
       cloud.style.left = `${left}px`;
       cloud.style.top = `${top}px`;
       cloud.style.fontSize = `${Math.round(size / 7.4)}px`;
-      cloud.style.setProperty('--dx', `${int(4, 18)}px`);
-      cloud.style.setProperty('--dur', `${rand(6.5, 14).toFixed(2)}s`);
+      cloud.dataset.baseDx = String(int(4, 18));
+      cloud.dataset.baseDur = String(rand(6.5, 14).toFixed(2));
       cloud.style.setProperty('--delay', `${rand(0, 2.5).toFixed(2)}s`);
+      applyCloudDifficulty(cloud);
       cloudTone(cloud);
       scene.appendChild(cloud);
     }
   }
 
-  shuffleBtn.addEventListener('click', () => {
-    streak = 0;
+  function resetCombo(){
+    combo = 0;
+    lastClickTs = 0;
     updateHud();
+  }
+
+  shuffleBtn.addEventListener('click', () => {
+    resetCombo();
     layoutClouds();
     liveRegion.textContent = 'Облака перемешаны';
   });
 
+  soundBtn.addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    if (soundEnabled) ensureAudio();
+    soundBtn.textContent = soundEnabled ? '🔊 Sound On' : '🔇 Sound Off';
+    soundBtn.setAttribute('aria-pressed', soundEnabled ? 'true' : 'false');
+    liveRegion.textContent = soundEnabled ? 'Звук включён' : 'Звук выключен';
+  });
+
+  function handleResetBest(){
+    resetBestHoldTimer = null;
+    best = 0;
+    localStorage.setItem(BEST_KEY, '0');
+    updateHud();
+    liveRegion.textContent = 'Рекорд сброшен';
+  }
+
+  resetBestBtn.addEventListener('pointerdown', () => {
+    resetBestHoldTimer = setTimeout(handleResetBest, 900);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(evt => {
+    resetBestBtn.addEventListener(evt, () => {
+      if (resetBestHoldTimer) {
+        clearTimeout(resetBestHoldTimer);
+        resetBestHoldTimer = null;
+      }
+    });
+  });
+  resetBestBtn.addEventListener('click', () => {
+    liveRegion.textContent = 'Удерживай Reset Best, чтобы сбросить рекорд';
+  });
+
   window.addEventListener('resize', () => layoutClouds());
+  setInterval(() => {
+    if (combo > 0 && performance.now() - lastClickTs > getComboWindowMs()) {
+      combo = 0;
+      updateHud();
+    }
+    scene.querySelectorAll('.cloud:not(.hidden):not(.bursting)').forEach(applyCloudDifficulty);
+  }, 300);
+
   updateHud();
   layoutClouds();
 })();
