@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fair Shot Arena</title>
+  <style>
+    :root{--bg:#0b1020;--card:#111a33;--text:#e9efff;--muted:#9fb2e0;--ok:#34d399;--bad:#fb7185;--acc:#60a5fa}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at top,#162449,var(--bg));color:var(--text)}
+    .wrap{max-width:430px;margin:0 auto;padding:14px}
+    .card{background:rgba(17,26,51,.9);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;margin-bottom:10px}
+    h1{font-size:20px;margin:0 0 6px} p{margin:0;color:var(--muted);font-size:13px}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .mode button,.lane{border:1px solid rgba(255,255,255,.2);background:#1b2a52;color:#fff;border-radius:10px;padding:8px 10px;font-weight:700}
+    .mode .active{outline:2px solid #a5b4fc}
+    .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font-size:13px}
+    .stat{background:#0f1730;border-radius:10px;padding:8px}
+    .arena{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .lane{height:92px;position:relative;font-size:12px}
+    .target{position:absolute;left:50%;top:50%;width:34px;height:34px;border-radius:50%;transform:translate(-50%,-50%);background:var(--acc);box-shadow:0 0 0 6px rgba(96,165,250,.2)}
+    .hit{background:var(--ok)!important}.miss{background:var(--bad)!important}
+    .start{width:100%;padding:12px;border-radius:12px;border:0;background:linear-gradient(135deg,#60a5fa,#34d399);font-weight:800;color:#081225}
+    .small{font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Fair Shot Arena</h1>
+    <p>45 сек. Тапай lane с целью. Сравни ощущение справедливости RNG.</p>
+  </div>
+
+  <div class="card row mode">
+    <strong>Режим:</strong>
+    <button id="modeA" class="active">A: Pure RNG</button>
+    <button id="modeB">B: Fair RNG</button>
+  </div>
+
+  <div class="card stats">
+    <div class="stat">⏱ Время: <b id="time">45</b>s</div>
+    <div class="stat">🎯 Счёт: <b id="score">0</b></div>
+    <div class="stat">✅ Попадания: <b id="hits">0</b></div>
+    <div class="stat">❌ Промахи: <b id="misses">0</b></div>
+    <div class="stat">📉 Max miss streak: <b id="maxStreak">0</b></div>
+    <div class="stat">🏆 Рекорд: <b id="best">0</b></div>
+  </div>
+
+  <div class="card arena" id="arena"></div>
+  <button id="start" class="start">Старт</button>
+  <p class="small" id="hint" style="margin-top:8px">One-thumb: жми по нужной полосе.</p>
+</div>
+
+<script>
+(() => {
+  const arena = document.getElementById('arena');
+  const state = { mode:'A', time:45, score:0, hits:0, misses:0, streak:0, maxStreak:0, running:false, targetLane:0 };
+  const els = Object.fromEntries(['time','score','hits','misses','maxStreak','best','hint'].map(id=>[id,document.getElementById(id)]));
+
+  for(let i=0;i<3;i++){
+    const b=document.createElement('button'); b.className='lane'; b.dataset.i=i; b.textContent='Lane '+(i+1);
+    b.addEventListener('click',()=>shoot(i,b)); arena.appendChild(b);
+  }
+
+  function bestKey(){ return `fairShotBest_${state.mode}`; }
+  function hitChance(){
+    if(state.mode==='A') return 0.65;
+    return Math.min(0.90, 0.65 + (state.streak>=2?0.12:0));
+  }
+  function spawnTarget(){
+    state.targetLane = Math.floor(Math.random()*3);
+    [...arena.children].forEach((lane,idx)=>lane.innerHTML = idx===state.targetLane ? '<div class="target"></div>' : '');
+  }
+  function setMode(m){
+    if(state.running) return;
+    state.mode=m;
+    document.getElementById('modeA').classList.toggle('active',m==='A');
+    document.getElementById('modeB').classList.toggle('active',m==='B');
+    els.best.textContent = localStorage.getItem(bestKey()) || 0;
+    els.hint.textContent = m==='A' ? 'A: фиксированный шанс 65%.' : 'B: anti-tilt — шанс растёт после серии промахов.';
+  }
+
+  function flash(el, cls){ el.classList.add(cls); setTimeout(()=>el.classList.remove(cls),130); }
+
+  function shoot(i,btn){
+    if(!state.running) return;
+    if(i!==state.targetLane){ state.misses++; state.streak++; state.maxStreak=Math.max(state.maxStreak,state.streak); flash(btn,'miss'); return render(); }
+    if(Math.random() <= hitChance()){
+      state.score++; state.hits++; state.streak=0; flash(btn,'hit');
+    } else {
+      state.misses++; state.streak++; state.maxStreak=Math.max(state.maxStreak,state.streak); flash(btn,'miss');
+    }
+    spawnTarget();
+    render();
+  }
+
+  function render(){
+    els.time.textContent=state.time; els.score.textContent=state.score; els.hits.textContent=state.hits;
+    els.misses.textContent=state.misses; els.maxStreak.textContent=state.maxStreak; els.best.textContent=localStorage.getItem(bestKey())||0;
+  }
+
+  document.getElementById('modeA').onclick=()=>setMode('A');
+  document.getElementById('modeB').onclick=()=>setMode('B');
+
+  document.getElementById('start').onclick=()=>{
+    state.time=45;state.score=0;state.hits=0;state.misses=0;state.streak=0;state.maxStreak=0;state.running=true;
+    spawnTarget(); render();
+    const t=setInterval(()=>{
+      state.time--; render();
+      if(state.time<=0){
+        clearInterval(t); state.running=false;
+        const best = +localStorage.getItem(bestKey())||0;
+        if(state.score>best) localStorage.setItem(bestKey(),String(state.score));
+        const total=state.hits+state.misses; const rate=total?Math.round(state.hits/total*100):0;
+        els.hint.textContent=`Финиш: ${state.score} очков · hit rate ${rate}% · max miss streak ${state.maxStreak}.`;
+        render();
+      }
+    },1000);
+  };
+
+  setMode('A'); render();
+})();
+</script>
+</body>
+</html>

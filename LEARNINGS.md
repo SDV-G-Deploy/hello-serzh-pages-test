@@ -63,3 +63,22 @@ What worked:
 
 New rule:
 - For daily-seed concepts, lock seed to UTC date and show attempts left directly in UI.
+
+## 2026-03-13 (fairness MVP)
+
+- Implemented new playable: `demos/fair-shot-arena/`.
+- Added A/B RNG modes:
+  - A: fixed 65% hit chance
+  - B: anti-tilt boost after miss streak
+- Added end-of-run metrics: score, hit rate, max miss streak, and local best per mode.
+- Added game card to `games.html`; updated `ROADMAP.md` (done + next candidate).
+
+What worked:
+- Visible anti-tilt logic gives immediate test surface for “feels fair” perception.
+- Miss-streak metric is a useful proxy for frustration without backend analytics.
+
+New rule:
+- For RNG-heavy concepts, always expose at least one fairness mode and one frustration metric in MVP.
+
+Next:
+- Add tiny event hooks (`run_start`, `shot_hit`, `shot_miss`, `run_end`) for future lightweight telemetry.

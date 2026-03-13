@@ -30,11 +30,11 @@ SLA: one daily digest run should produce one new playable MVP link.
 ## Current focus (seed)
 
 ### TODAY_MVP (candidate)
-- Idea: **Fair Shot Arena**
-- Why: быстрый A/B тест perceived fairness и anti-tilt RNG
-- Complexity: low-medium
+- Idea: **Lane Surfer**
+- Why: очень быстрый раннер-loop, удобно тестировать tempo на мобилке
+- Complexity: low
 - Priority: high
-- Next test (2–4h): 1 бой + 2 RNG режима + лог фрустрации
+- Next test (2–4h): 30s loop + 3 паттерна препятствий + combo streak
 
 ### BACKLOG
 1. Lane Surfer (tap to switch lanes, avoid obstacles)
@@ -44,6 +44,7 @@ SLA: one daily digest run should produce one new playable MVP link.
 
 ## Done log
 
+- 2026-03-13: Fair Shot Arena MVP shipped in `demos/fair-shot-arena/` (A/B RNG fairness test, 45s loop, local best per mode, miss-streak metric)
 - 2026-03-13: Signal Dash demo shipped (mobile controls + tap start + vibro + local top-5)
 - 2026-03-13: Thumb Orbit MVP shipped in `demos/thumb-orbit/` (one-thumb hold controls, 30s loop, local best, vibro)
 - 2026-03-13: Daily Tower Seed MVP shipped in `demos/daily-tower-seed/` (same daily seed, 3 attempts/day, local best)
