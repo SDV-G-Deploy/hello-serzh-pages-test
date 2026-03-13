@@ -14,7 +14,7 @@
     .stat{background:#0d152b;border-radius:10px;padding:8px;font-size:12px;text-align:center}.stat b{display:block;font-size:16px;margin-top:3px}
     .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
     .cell{aspect-ratio:1;border:1px solid rgba(255,255,255,.2);border-radius:12px;background:#132247;color:#fff;font-weight:800;font-size:24px;display:flex;align-items:center;justify-content:center;position:relative}
-    .lv1{background:#1e3a8a}.lv2{background:#2563eb}.lv3{background:#0891b2}.lv4{background:#0d9488}.lv5{background:#16a34a}.lv6{background:#65a30d}.lv7{background:#ca8a04}.lv8{background:#ea580c}.lv9{background:#dc2626}
+    .lv1{background:#1e3a8a}.lv2{background:#2563eb}.lv3{background:#0891b2}.lv4{background:#0d9488}.lv5{background:#16a34a}.lv6{background:#65a30d}.lv7{background:#ca8a04}.lv8{background:#ea580c}.lv9{background:#dc2626}.lv10{background:#be123c}.lv11{background:#7e22ce}.lv12{background:#4338ca}
     .hint-cell{outline:3px solid rgba(255,255,255,.82); box-shadow:0 0 0 4px rgba(96,165,250,.35) inset}
     .hint-badge{position:absolute;right:6px;top:6px;font-size:10px;padding:2px 5px;border-radius:999px;background:rgba(255,255,255,.9);color:#0a1020;font-weight:900}
     button{width:100%;border:0;border-radius:12px;padding:12px;font-weight:800;font-size:16px;color:#081123;background:linear-gradient(135deg,#93c5fd,#34d399)}
@@ -48,7 +48,7 @@
   const setBest=v=>localStorage.setItem('mergeSprint45Best',String(v));
 
   function hud(){ui.time.textContent=s.time;ui.score.textContent=s.score;ui.best.textContent=best();}
-  function classFor(lv){return 'cell lv'+Math.min(lv,9)}
+  function classFor(lv){return 'cell lv'+Math.min(lv,12)}
 
   function neigh(i){
     const r=Math.floor(i/3), c=i%3, out=[];
@@ -59,7 +59,7 @@
   function pickBestMove(){
     let bestI=0, bestScore=-1;
     for(let i=0;i<9;i++){
-      const next=Math.min(9,s.board[i]+1);
+      const next=s.board[i]+1;
       let score=0;
       for(const n of neigh(i)) if(s.board[n]===next) score += 2;
       if(s.board[i]===1) score += 0.3;
@@ -115,7 +115,7 @@
 
   function tap(i){
     if(!s.running) return;
-    s.board[i] = Math.min(9, s.board[i]+1);
+    s.board[i] = s.board[i]+1;
     s.score += 1;
     let chains=0;
     while(true){
