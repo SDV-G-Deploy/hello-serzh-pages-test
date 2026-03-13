@@ -20,6 +20,8 @@
     .btn{appearance:none;border:1px solid rgba(255,255,255,.25);color:white;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
     .btn.subtle{background:rgba(255,255,255,.08);font-weight:600}
     .btn[aria-pressed="true"]{background:linear-gradient(135deg,#22c55e,#16a34a)}
+    .btn.cta{background:linear-gradient(135deg,#f59e0b,#ef4444)}
+    .btn.hidden{display:none}
 
     .cloud-scene{
       position:relative;
@@ -181,12 +183,14 @@
         <span class="pill" id="scorePill">Score: <strong id="score">0</strong></span>
         <span class="pill" id="comboPill">Combo: <strong id="combo">0</strong></span>
         <span class="pill">Best: <strong id="best">0</strong></span>
+        <span class="pill">Best Combo: <strong id="bestCombo">0</strong></span>
         <span class="pill" id="questPill">Quest: <strong id="quest">0/5</strong> · <strong id="timer">30s</strong></span>
       </div>
       <div class="controls">
         <button class="btn subtle" id="soundBtn" type="button" aria-pressed="false">🔇 Sound Off</button>
         <button class="btn subtle" id="resetBestBtn" type="button" title="Удерживай для сброса рекорда">Reset Best</button>
         <button class="btn" id="shuffleBtn" type="button">Перемешать облака</button>
+        <button class="btn cta hidden" id="againBtn" type="button">Ещё раунд ⚡</button>
       </div>
     </div>
 
@@ -202,6 +206,7 @@
   const scoreEl = document.getElementById('score');
   const comboEl = document.getElementById('combo');
   const bestEl = document.getElementById('best');
+  const bestComboEl = document.getElementById('bestCombo');
   const scorePill = document.getElementById('scorePill');
   const comboPill = document.getElementById('comboPill');
   const liveRegion = document.getElementById('liveRegion');
@@ -212,9 +217,11 @@
   const shuffleBtn = document.getElementById('shuffleBtn');
   const soundBtn = document.getElementById('soundBtn');
   const resetBestBtn = document.getElementById('resetBestBtn');
+  const againBtn = document.getElementById('againBtn');
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const BEST_KEY = 'clickableClouds.best.v2';
+  const BEST_COMBO_KEY = 'clickableClouds.bestCombo.v1';
   const CLOUD_COUNT = 11;
   const CLOUD_TAP_LIMIT = 3;
   const RESPAWN_MS = 5000;
@@ -230,6 +237,7 @@
   let score = 0;
   let combo = 0;
   let best = Number(localStorage.getItem(BEST_KEY) || 0);
+  let bestCombo = Number(localStorage.getItem(BEST_COMBO_KEY) || 0);
   let lastClickTs = 0;
   let gameStartTs = performance.now();
   let roundEndsAt = 0;
@@ -267,6 +275,7 @@
     scoreEl.textContent = String(score);
     comboEl.textContent = String(combo);
     bestEl.textContent = String(best);
+    bestComboEl.textContent = String(bestCombo);
 
     comboPill.classList.toggle('combo-hot', combo >= 4);
     pulsePill(scorePill);
@@ -406,6 +415,10 @@
 
     const clickPoints = BASE_CLICK_POINTS * combo;
     score += clickPoints;
+    if (combo > bestCombo){
+      bestCombo = combo;
+      localStorage.setItem(BEST_COMBO_KEY, String(bestCombo));
+    }
 
     const rect = scene.getBoundingClientRect();
     const x = (ev.clientX || rect.left + cloud.offsetLeft + cloud.offsetWidth / 2) - rect.left;
@@ -476,9 +489,10 @@
       updateHud();
       liveRegion.textContent = `Квест выполнен! +${ROUND_REWARD} бонуса`;
     } else if (!success) {
-      liveRegion.textContent = `Раунд окончен: ${roundBursts}/${ROUND_TARGET_BURSTS}. Жми дальше!`;
+      liveRegion.textContent = `Раунд окончен: ${roundBursts}/${ROUND_TARGET_BURSTS}. Жми ещё раунд!`;
     }
     roundEndsAt = 0;
+    againBtn.classList.remove('hidden');
     updateRoundHud();
   }
 
@@ -527,8 +541,21 @@
 
   shuffleBtn.addEventListener('click', () => {
     resetCombo();
+    roundEndsAt = 0;
+    againBtn.classList.add('hidden');
     layoutClouds();
+    updateRoundHud();
     liveRegion.textContent = 'Облака перемешаны';
+  });
+
+  againBtn.addEventListener('click', () => {
+    resetCombo();
+    roundEndsAt = 0;
+    roundBursts = 0;
+    roundWon = false;
+    againBtn.classList.add('hidden');
+    updateRoundHud();
+    liveRegion.textContent = 'Новый раунд: лопни 5 облаков за 30 секунд';
   });
 
   soundBtn.addEventListener('click', () => {
