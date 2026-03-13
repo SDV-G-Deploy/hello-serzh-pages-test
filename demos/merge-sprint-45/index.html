@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Merge Sprint 45</title>
+  <style>
+    :root{--bg:#0a1020;--card:#111a33;--text:#e9efff;--muted:#9eb2df;--acc:#60a5fa;--ok:#34d399}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at top,#1a2d5a,var(--bg));color:var(--text)}
+    .wrap{max-width:430px;margin:0 auto;padding:12px}
+    .card{background:rgba(17,26,51,.92);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:12px;margin-bottom:10px}
+    h1{margin:0 0 4px;font-size:21px}.sub{margin:0;color:var(--muted);font-size:13px}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .stat{background:#0d152b;border-radius:10px;padding:8px;font-size:12px;text-align:center}.stat b{display:block;font-size:16px;margin-top:3px}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .cell{aspect-ratio:1;border:1px solid rgba(255,255,255,.2);border-radius:12px;background:#132247;color:#fff;font-weight:800;font-size:24px;display:flex;align-items:center;justify-content:center}
+    .lv1{background:#1e3a8a}.lv2{background:#2563eb}.lv3{background:#0891b2}.lv4{background:#0d9488}.lv5{background:#16a34a}.lv6{background:#65a30d}.lv7{background:#ca8a04}.lv8{background:#ea580c}.lv9{background:#dc2626}
+    button{width:100%;border:0;border-radius:12px;padding:12px;font-weight:800;font-size:16px;color:#081123;background:linear-gradient(135deg,#93c5fd,#34d399)}
+    #start{margin-top:8px;background:linear-gradient(135deg,#a78bfa,#60a5fa)}
+    #msg{margin-top:8px;font-size:12px;color:var(--muted);min-height:18px}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card"><h1>Merge Sprint 45</h1><p class="sub">45 секунд. Тапай клетки, собирай chain merges и бей рекорд.</p></div>
+  <div class="card stats">
+    <div class="stat">⏱<b id="time">45</b></div>
+    <div class="stat">🏁<b id="score">0</b></div>
+    <div class="stat">🏆<b id="best">0</b></div>
+  </div>
+  <div class="card">
+    <div id="grid" class="grid"></div>
+    <button id="start">Старт</button>
+    <div id="msg">Тап по клетке повышает её уровень. Одинаковые соседние уровни сливаются.</div>
+  </div>
+</div>
+<script>
+(() => {
+  const s={running:false,time:45,score:0,board:Array(9).fill(1)};
+  const el=id=>document.getElementById(id);
+  const ui={time:el('time'),score:el('score'),best:el('best'),grid:el('grid'),msg:el('msg')};
+  const best=()=>+(localStorage.getItem('mergeSprint45Best')||0);
+  const setBest=v=>localStorage.setItem('mergeSprint45Best',String(v));
+
+  function hud(){ui.time.textContent=s.time;ui.score.textContent=s.score;ui.best.textContent=best();}
+  function classFor(lv){return 'cell lv'+Math.min(lv,9)}
+  function draw(){
+    ui.grid.innerHTML='';
+    s.board.forEach((lv,i)=>{
+      const b=document.createElement('button');
+      b.className=classFor(lv);
+      b.textContent=String(lv);
+      b.onclick=()=>tap(i);
+      ui.grid.appendChild(b);
+    });
+  }
+
+  function neigh(i){
+    const r=Math.floor(i/3), c=i%3, out=[];
+    if(r>0) out.push(i-3); if(r<2) out.push(i+3); if(c>0) out.push(i-1); if(c<2) out.push(i+1);
+    return out;
+  }
+
+  function mergeStep(){
+    const toUp = new Map();
+    for(let i=0;i<9;i++){
+      for(const n of neigh(i)){
+        if(n<=i) continue;
+        if(s.board[i]===s.board[n]){
+          const keep=i, consume=n;
+          if(!toUp.has(keep) && !toUp.has(consume)) toUp.set(keep, consume);
+        }
+      }
+    }
+    if(toUp.size===0) return 0;
+
+    let gained=0;
+    for(const [k,v] of toUp.entries()){
+      const next = s.board[k]+1;
+      s.board[k]=next;
+      s.board[v]=1;
+      gained += Math.pow(2,next);
+    }
+    s.score += gained;
+    return toUp.size;
+  }
+
+  function tap(i){
+    if(!s.running) return;
+    s.board[i] = Math.min(9, s.board[i]+1);
+    s.score += 1;
+    let chains=0;
+    while(true){
+      const m=mergeStep();
+      if(!m) break;
+      chains += m;
+    }
+    if(chains>0) ui.msg.textContent = `Chain x${chains} • +merge bonus`; else ui.msg.textContent='+';
+    hud(); draw();
+  }
+
+  function reset(){ s.time=45; s.score=0; s.board=Array.from({length:9},()=>1+Math.floor(Math.random()*2)); }
+
+  function start(){
+    reset(); s.running=true; hud(); draw(); ui.msg.textContent='Go!';
+    const t=setInterval(()=>{
+      if(!s.running){clearInterval(t);return;}
+      s.time--; hud();
+      if(s.time<=0){
+        clearInterval(t); s.running=false;
+        if(s.score>best()) setBest(s.score);
+        hud(); ui.msg.textContent=`Финиш: ${s.score}. Нажми Старт для новой попытки.`;
+      }
+    },1000);
+  }
+
+  el('start').onclick=start;
+  hud(); draw();
+})();
+</script>
+</body>
+</html>

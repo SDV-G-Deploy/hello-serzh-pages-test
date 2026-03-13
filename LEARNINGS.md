@@ -133,3 +133,20 @@ New rule:
 
 Next:
 - Add near-miss bonus and brief haptic pulse on successful tight-gap pass.
+
+## 2026-03-13 (merge pressure MVP)
+
+- Implemented `demos/merge-sprint-45/index.html` as a 45-second 3x3 merge sprint.
+- Added tap-to-level-up action and orthogonal auto-merge chains.
+- Added chain merge scoring and persistent local best score.
+- Added game card to `games.html`; updated `ROADMAP.md` done/candidate.
+
+What worked:
+- 45s pressure creates fast decision loop and immediate replay urge.
+- Chain merge feedback gives clear “smart tap” reward without complex rules.
+
+New rule:
+- Merge MVPs should include visible chain feedback and compressed board (3x3/4x4) for mobile clarity.
+
+Next:
+- Add small “next best move hint” pulse for onboarding in first 10 seconds.

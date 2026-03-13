@@ -30,11 +30,11 @@ SLA: one daily digest run should produce one new playable MVP link.
 ## Current focus (seed)
 
 ### TODAY_MVP (candidate)
-- Idea: **Merge Sprint 45**
-- Why: 45s merge-loop хорошо тестирует decision speed и micro-meta retention
-- Complexity: medium
+- Idea: **Fair Shot Arena v2 (readability + telemetry hooks)**
+- Why: быстро повысим диагностическую ценность RNG/fairness тестов
+- Complexity: low
 - Priority: high
-- Next test (2–4h): 3x3 поле + merge chain + 45s pressure mode
+- Next test (2–4h): явные зоны hit/miss + hooks run_start/shot_hit/shot_miss/run_end
 
 ### BACKLOG
 1. Lane Surfer (tap to switch lanes, avoid obstacles)
@@ -44,6 +44,7 @@ SLA: one daily digest run should produce one new playable MVP link.
 
 ## Done log
 
+- 2026-03-13: Merge Sprint 45 MVP shipped in `demos/merge-sprint-45/` (3x3 merge sprint, chain reactions, 45s pressure loop, local best)
 - 2026-03-13: Drift Dot MVP shipped in `demos/drift-dot/` (60s hold/release survival, moving gap walls, gradual ramp, local best)
 - 2026-03-13: Pulse Catcher MVP shipped in `demos/pulse-catcher/` (45s tap-timing loop, accuracy tiers, streak multiplier, local best)
 - 2026-03-13: Lane Surfer MVP shipped in `demos/lane-surfer/` (30s one-thumb runner, 3 obstacle patterns, combo bonus, local best)
