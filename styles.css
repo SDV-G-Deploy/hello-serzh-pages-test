@@ -1,0 +1,26 @@
+:root {
+  --bg-a:#0b1220; --bg-b:#1e293b; --card:rgba(255,255,255,.08);
+  --line:rgba(255,255,255,.16); --text:#eef2ff; --muted:#cbd5e1;
+  --accent:#38bdf8; --accent2:#818cf8;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100svh; color:var(--text);
+  font-family:Inter,-apple-system,Segoe UI,Roboto,sans-serif;
+  background:
+    radial-gradient(900px 500px at 10% -10%, #334155 0%, transparent 60%),
+    radial-gradient(800px 450px at 100% 0%, #1d4ed8 0%, transparent 60%),
+    linear-gradient(160deg,var(--bg-b),var(--bg-a));
+}
+.container{width:min(1000px,92vw); margin:0 auto; padding:28px 0 48px}
+nav{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px}
+nav a{color:white; text-decoration:none; border:1px solid var(--line); padding:8px 12px; border-radius:10px; background:rgba(255,255,255,.05)}
+nav a.active{background:linear-gradient(135deg,var(--accent),var(--accent2)); border-color:transparent}
+.card{border:1px solid var(--line); background:var(--card); border-radius:18px; padding:22px; box-shadow:0 14px 32px rgba(0,0,0,.28)}
+h1{margin:0 0 8px; font-size:clamp(28px,5vw,42px)}
+h2{margin:0 0 8px}
+p{color:var(--muted); line-height:1.6}
+.grid{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); margin-top:14px}
+.item{border:1px solid var(--line); border-radius:12px; padding:14px; background:rgba(255,255,255,.04)}
+.avatar{width:84px;height:84px;border-radius:50%;border:3px solid rgba(255,255,255,.65);box-shadow:0 8px 24px rgba(0,0,0,.35)}
+small{color:var(--muted)}

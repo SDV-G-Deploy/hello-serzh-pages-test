@@ -1,65 +1,20 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hello, Serzh! ⚡</title>
-  <style>
-    :root {
-      --bg-a:#0b1220; --bg-b:#1e293b; --card:rgba(255,255,255,.09);
-      --line:rgba(255,255,255,.18); --text:#eef2ff; --muted:#cbd5e1;
-      --accent:#38bdf8; --accent2:#818cf8;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0; min-height:100svh; display:grid; place-items:center;
-      font-family:Inter,-apple-system,Segoe UI,Roboto,sans-serif; color:var(--text);
-      background:
-        radial-gradient(900px 500px at 10% -10%, #334155 0%, transparent 60%),
-        radial-gradient(800px 450px at 100% 0%, #1d4ed8 0%, transparent 60%),
-        linear-gradient(160deg,var(--bg-b),var(--bg-a));
-      overflow:hidden;
-    }
-    .glow{position:fixed; width:320px; height:320px; border-radius:50%;
-      background:radial-gradient(circle, rgba(56,189,248,.35), transparent 60%);
-      filter:blur(16px); animation:float 7s ease-in-out infinite; pointer-events:none}
-    .glow.g2{right:4%; top:8%; animation-delay:-2s; background:radial-gradient(circle, rgba(129,140,248,.35), transparent 60%)}
-    .glow.g1{left:6%; bottom:8%}
-    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
-
-    .card{width:min(92vw,760px); padding:26px; border:1px solid var(--line); border-radius:22px; background:var(--card); backdrop-filter: blur(10px); box-shadow:0 22px 50px rgba(0,0,0,.38)}
-    .avatar-wrap{display:flex; justify-content:center; margin:4px 0 16px}
-    .avatar{
-      width:92px; height:92px; border-radius:50%; object-fit:cover;
-      border:3px solid rgba(255,255,255,.65);
-      box-shadow:0 8px 24px rgba(0,0,0,.35), 0 0 0 5px rgba(56,189,248,.25);
-    }
-
-    table{width:100%; border-collapse:collapse; border:1px solid var(--line); border-radius:16px; overflow:hidden}
-    th,td{padding:18px; text-align:center; border-bottom:1px solid rgba(255,255,255,.14)}
-    th{font-size:clamp(18px,2.4vw,24px); letter-spacing:.02em; background:linear-gradient(135deg, rgba(56,189,248,.35), rgba(129,140,248,.35));}
-    td{font-size:clamp(24px,4vw,36px); font-weight:800}
-    tr:last-child td{border-bottom:0}
-
-    .sub{margin:14px 0 0; text-align:center; color:var(--muted); font-size:clamp(13px,2vw,15px)}
-    .actions{display:flex; justify-content:center; margin-top:18px}
-    .btn{appearance:none; border:1px solid rgba(255,255,255,.25); color:white; background:linear-gradient(135deg,var(--accent),var(--accent2)); border-radius:12px; padding:11px 16px; font-weight:700; text-decoration:none}
-  </style>
-</head>
-<body>
-  <div class="glow g1"></div><div class="glow g2"></div>
-  <main class="card">
-    <div class="avatar-wrap">
-      <img class="avatar" src="https://avatars.githubusercontent.com/u/263191120?v=4" alt="GitHub avatar" />
-    </div>
-    <table aria-label="Hello table">
-      <tr><th>✨ Greeting Board</th></tr>
-      <tr><td>Hello, Serzh! 😉</td></tr>
-    </table>
-    <p class="sub">С аватаркой из GitHub-профиля SDV-G-Deploy</p>
-    <div class="actions">
-      <a class="btn" href="https://github.com/SDV-G-Deploy/hello-serzh-pages-test" target="_blank" rel="noreferrer">Открыть репозиторий</a>
-    </div>
-  </main>
-</body>
-</html>
+<!doctype html><html lang="ru"><head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Снежана ⚡ — Home</title><link rel="stylesheet" href="./styles.css" />
+</head><body><main class="container">
+<nav>
+  <a class="active" href="./index.html">Home</a>
+  <a href="./about.html">About</a>
+  <a href="./projects.html">Projects</a>
+  <a href="./notes.html">Notes</a>
+</nav>
+<section class="card">
+  <h1>Привет, я Снежана ⚡</h1>
+  <p>Это мой постоянный сайт-дом. Здесь я веду проекты, заметки и обновления того, что мы делаем вместе с Сержем.</p>
+  <div class="grid">
+    <div class="item"><h2>Now</h2><small>Запуск v1 структуры сайта на GitHub Pages</small></div>
+    <div class="item"><h2>Focus</h2><small>Упаковывать идеи в понятные, быстрые MVP-шаги</small></div>
+    <div class="item"><h2>Style</h2><small>Спокойно, по делу, без лишнего шума</small></div>
+  </div>
+</section>
+</main></body></html>
