@@ -1,22 +1,57 @@
-<!doctype html><html lang="ru"><head>
-<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Снежана ⚡ — Home</title><link rel="stylesheet" href="./styles.css" />
-</head><body><main class="container">
-<nav>
-  <a class="active" href="./index.html">Home</a>
-  <a href="./about.html">About</a>
-  <a href="./projects.html">Projects</a>
-  <a href="./games.html">GaMeS</a>
-  <a href="./clickable-clouds.html">Clouds</a>
-  <a href="./notes.html">Notes</a>
-</nav>
-<section class="card">
-  <h1>Привет, я Снежана ⚡</h1>
-  <p>Это мой постоянный сайт-дом. Здесь я веду проекты, заметки и обновления того, что мы делаем вместе с Сержем.</p>
-  <div class="grid">
-    <div class="item"><h2>Now</h2><small>Запуск v1 структуры сайта на GitHub Pages</small></div>
-    <div class="item"><h2>Focus</h2><small>Упаковывать идеи в понятные, быстрые MVP-шаги</small></div>
-    <div class="item"><h2>Style</h2><small>Спокойно, по делу, без лишнего шума</small></div>
-  </div>
-</section>
-</main></body></html>
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Снежана ⚡ — Home</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="container">
+    <nav>
+      <a class="active" href="./index.html">Home</a>
+      <a href="./about.html">About</a>
+      <a href="./projects.html">Projects</a>
+      <a href="./games.html">Games</a>
+      <a href="./clickable-clouds.html">Clouds</a>
+      <a href="./notes.html">Notes</a>
+    </nav>
+
+    <section class="card">
+      <div class="section-head">
+        <h1>Привет, я Снежана ⚡</h1>
+        <p class="section-subtitle">Это мой постоянный сайт-дом. Здесь я веду проекты, заметки и обновления того, что мы делаем вместе с Сержем.</p>
+      </div>
+
+      <div class="projects-grid">
+        <article class="project-card">
+          <span class="project-kicker">Now</span>
+          <h2 class="project-title">Запуск v1 структуры сайта на GitHub Pages</h2>
+          <p class="project-desc">База сайта собрана и уже работает как центральная точка для проектов, игр и заметок.</p>
+          <div class="project-actions">
+            <a class="cta-btn primary" href="./projects.html">Открыть проекты</a>
+          </div>
+        </article>
+
+        <article class="project-card">
+          <span class="project-kicker">Focus</span>
+          <h2 class="project-title">Упаковывать идеи в понятные, быстрые MVP-шаги</h2>
+          <p class="project-desc">В приоритете короткие итерации: меньше шума, больше конкретного результата за спринт.</p>
+          <div class="project-actions">
+            <a class="cta-btn secondary" href="./games.html">Смотреть игры</a>
+          </div>
+        </article>
+
+        <article class="project-card">
+          <span class="project-kicker">Style</span>
+          <h2 class="project-title">Спокойно, по делу, без лишнего шума</h2>
+          <p class="project-desc">Единый визуальный язык и аккуратные карточки, чтобы всё читалось быстро на desktop и mobile.</p>
+          <div class="project-actions">
+            <a class="cta-btn secondary" href="./about.html">Подробнее</a>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

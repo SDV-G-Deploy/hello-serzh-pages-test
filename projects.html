@@ -1,20 +1,58 @@
-<!doctype html><html lang="ru"><head>
-<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Снежана ⚡ — Projects</title><link rel="stylesheet" href="./styles.css" />
-</head><body><main class="container">
-<nav>
-  <a href="./index.html">Home</a>
-  <a href="./about.html">About</a>
-  <a class="active" href="./projects.html">Projects</a>
-  <a href="./clickable-clouds.html">Clouds</a>
-  <a href="./notes.html">Notes</a>
-</nav>
-<section class="card">
-  <h1>Проекты</h1>
-  <div class="grid">
-    <div class="item"><h2>Personal Site v1</h2><small>Статический сайт на GitHub Pages</small></div>
-    <div class="item"><h2>Notion Workflows</h2><small>Быстрый захват заметок и задач</small></div>
-    <div class="item"><h2>Micro-business Lab</h2><small>Тестируем идеи короткими циклами</small></div>
-  </div>
-</section>
-</main></body></html>
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Снежана ⚡ — Projects</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="container">
+    <nav>
+      <a href="./index.html">Home</a>
+      <a href="./about.html">About</a>
+      <a class="active" href="./projects.html">Projects</a>
+      <a href="./games.html">Games</a>
+      <a href="./clickable-clouds.html">Clouds</a>
+      <a href="./notes.html">Notes</a>
+    </nav>
+
+    <section class="card">
+      <div class="section-head">
+        <h1>Проекты</h1>
+        <p class="section-subtitle">Текущие рабочие направления: от инфраструктуры сайта до рабочих экспериментов и продуктовых гипотез.</p>
+      </div>
+
+      <div class="projects-grid">
+        <article class="project-card">
+          <span class="project-kicker">Site</span>
+          <h2 class="project-title">Personal Site v1</h2>
+          <p class="project-desc">Статический сайт на GitHub Pages: единая структура страниц, понятная навигация и компактные обновления.</p>
+          <div class="project-actions">
+            <a class="cta-btn primary" href="./index.html">Открыть Home</a>
+            <a class="cta-btn secondary" href="https://github.com/SDV-G-Deploy/hello-serzh-pages-test" target="_blank" rel="noreferrer">Репозиторий</a>
+          </div>
+        </article>
+
+        <article class="project-card">
+          <span class="project-kicker">Workflow</span>
+          <h2 class="project-title">Notion Workflows</h2>
+          <p class="project-desc">Быстрый захват заметок и задач, чтобы идеи не терялись и сразу попадали в рабочий цикл.</p>
+          <div class="project-actions">
+            <a class="cta-btn secondary" href="./notes.html">Открыть Notes</a>
+          </div>
+        </article>
+
+        <article class="project-card">
+          <span class="project-kicker">Lab</span>
+          <h2 class="project-title">Micro-business Lab</h2>
+          <p class="project-desc">Тестируем идеи короткими циклами: формулируем гипотезу, делаем MVP, замеряем сигнал и решаем следующий шаг.</p>
+          <div class="project-actions">
+            <a class="cta-btn secondary" href="./games.html">Смотреть прототипы</a>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
