@@ -94,6 +94,20 @@
       animation:bolt .28s ease-out forwards;
     }
 
+    .float-score{
+      position:absolute;
+      transform:translate(-50%, -50%);
+      font-weight:800;
+      font-size:14px;
+      letter-spacing:.2px;
+      color:#fef9c3;
+      text-shadow:0 2px 8px rgba(15,23,42,.45);
+      pointer-events:none;
+      animation:float-score .62s ease-out forwards;
+      z-index:3;
+    }
+    .float-score.bonus{color:#facc15;font-size:15px}
+
     @keyframes drift{
       0%,100%{transform:translate3d(0,0,0)}
       25%{transform:translate3d(var(--dx,8px),-8px,0)}
@@ -118,6 +132,11 @@
     @keyframes bolt{
       from{opacity:.98;transform:translate(-50%,-70%) scale(1)}
       to{opacity:0;transform:translate(-50%,-70%) scale(1.2)}
+    }
+    @keyframes float-score{
+      0%{opacity:0;transform:translate(-50%,-38%) scale(.86)}
+      18%{opacity:1}
+      100%{opacity:0;transform:translate(-50%,-170%) scale(1.05)}
     }
     @keyframes hud-bump{
       0%{transform:translateY(0) scale(1);opacity:1}
@@ -307,6 +326,17 @@
     }, 320);
   }
 
+  function emitScoreFloat(x, y, text, bonus = false){
+    if (!text) return;
+    const tag = document.createElement('span');
+    tag.className = `float-score${bonus ? ' bonus' : ''}`;
+    tag.style.left = `${x}px`;
+    tag.style.top = `${y}px`;
+    tag.textContent = text;
+    scene.appendChild(tag);
+    setTimeout(() => tag.remove(), 700);
+  }
+
   function cloudTone(cloud){
     cloud.style.filter = `hue-rotate(${int(-10, 16)}deg) saturate(${rand(0.98, 1.16).toFixed(2)})`;
   }
@@ -367,6 +397,7 @@
     const y = (ev.clientY || rect.top + cloud.offsetTop + cloud.offsetHeight / 2) - rect.top;
 
     emitLightning(x, y);
+    emitScoreFloat(x, y - 6, `+${clickPoints}`);
     cloudTone(cloud);
     playClickSfx();
 
@@ -382,6 +413,7 @@
     if (localClickCount >= CLOUD_TAP_LIMIT){
       const burstBonus = BASE_BURST_BONUS * combo;
       score += burstBonus;
+      emitScoreFloat(x + rand(-12, 12), y - 20, `+${burstBonus} burst`, true);
       burstAndRespawn(cloud);
       liveRegion.textContent = `Combo x${combo}. +${clickPoints} и burst +${burstBonus}`;
       updateBest();
