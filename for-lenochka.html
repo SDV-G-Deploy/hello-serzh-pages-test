@@ -353,6 +353,22 @@
       width: min(170px, 54vw);
       accent-color: #a78bfa;
     }
+
+    .lena-audio-loop-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, .28);
+      background: rgba(167, 139, 250, .2);
+      color: #f5e9ff;
+      font-size: 12px;
+      line-height: 1;
+      letter-spacing: .01em;
+      white-space: nowrap;
+    }
+
     .ritual-block {
       grid-column: 1 / -1;
       border: 1px solid rgba(255, 255, 255, .2);
@@ -540,13 +556,14 @@
               <div class="lena-audio-top">
                 <button class="lena-audio-btn" id="lenaAudioToggle" type="button" aria-label="Воспроизвести или поставить на паузу">▶ Play</button>
                 <span class="lena-audio-time" id="lenaAudioTime">0:00 / 0:00</span>
+                <span class="lena-audio-loop-badge" id="lenaAudioLoopBadge" aria-label="Повтор трека включен">🔁 Повтор: Вкл</span>
               </div>
               <div class="lena-audio-bottom">
                 <input class="lena-audio-range" id="lenaAudioSeek" type="range" min="0" max="100" value="0" step="0.1" aria-label="Прогресс воспроизведения" />
               </div>
               <div class="lena-audio-bottom">
                 <button class="lena-audio-btn" id="lenaAudioMute" type="button" aria-label="Выключить или включить звук">🔊 Звук</button>
-                <input class="lena-audio-range volume" id="lenaAudioVolume" type="range" min="0" max="1" value="0.7" step="0.01" aria-label="Громкость" />
+                <input class="lena-audio-range volume" id="lenaAudioVolume" type="range" min="0" max="1" value="0.2" step="0.01" aria-label="Громкость" />
               </div>
             </div>
           </section>
@@ -810,7 +827,7 @@
 
       volume.addEventListener('input', function () {
         const nextVolume = Number(volume.value);
-        audio.volume = Number.isFinite(nextVolume) ? nextVolume : 0.7;
+        audio.volume = Number.isFinite(nextVolume) ? nextVolume : 0.2;
         if (audio.volume > 0 && audio.muted) {
           audio.muted = false;
         }
@@ -853,7 +870,8 @@
         seasonHint.textContent = `Звучание для текущего настроения сезона: ${note.range} — ${note.season}`;
       });
 
-      audio.volume = Number(volume.value);
+      audio.loop = true;
+      audio.volume = Number.isFinite(Number(volume.value)) ? Number(volume.value) : 0.2;
       updateTimeUi();
       updateButtons();
     })();
