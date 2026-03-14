@@ -266,6 +266,71 @@
       white-space: pre-line;
     }
 
+    .ritual-block {
+      grid-column: 1 / -1;
+      border: 1px solid rgba(255, 255, 255, .2);
+      border-radius: 14px;
+      padding: clamp(14px, 2.6vw, 20px);
+      background: rgba(15, 23, 42, .24);
+      display: grid;
+      gap: 10px;
+    }
+
+    .ritual-block h2 {
+      margin: 0;
+      text-align: center;
+      color: #fde7f3;
+      font-size: clamp(16px, 2.3vw, 20px);
+    }
+
+    .ritual-hint {
+      margin: 0;
+      text-align: center;
+      font-size: 13px;
+      color: rgba(255, 230, 240, .82);
+    }
+
+    .ritual-actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .ritual-btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: clamp(14px, 2.1vw, 16px);
+      font-weight: 600;
+      color: #231a2c;
+      background: linear-gradient(135deg, #c4b5fd, #f9a8d4);
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+      box-shadow: 0 8px 18px rgba(167, 139, 250, .24);
+    }
+
+    .ritual-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.03);
+    }
+
+    .ritual-btn:focus-visible {
+      outline: 2px solid #fce7f3;
+      outline-offset: 2px;
+    }
+
+    .ritual-output {
+      min-height: 70px;
+      margin: 0;
+      padding: 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .1);
+      color: #ffe6f0;
+      line-height: 1.45;
+      white-space: pre-line;
+    }
+
     .hearts-layer {
       position: absolute;
       inset: 0;
@@ -311,6 +376,9 @@
         width: 100%;
       }
       .season-export-status {
+        width: 100%;
+      }
+      .ritual-btn {
         width: 100%;
       }
       .floating-heart { font-size: 16px; }
@@ -370,6 +438,15 @@
             </div>
             <p class="season-week-output" id="seasonWeekOutput" aria-live="polite">Нажми кнопку, чтобы увидеть описание недели сезона.</p>
             <p class="season-week-source">Источник: <a href="https://www.nippon.com/ru/features/h00124/" target="_blank" rel="noopener noreferrer">nippon.com/ru/features/h00124</a></p>
+          </section>
+
+          <section class="ritual-block" aria-labelledby="ritualTitle">
+            <h2 id="ritualTitle">Ритуал на 2 минуты</h2>
+            <p class="ritual-hint">Короткое действие под ритм текущего малого сезона.</p>
+            <div class="ritual-actions">
+              <button class="ritual-btn" id="ritualRefreshBtn" type="button">Новый ритуал</button>
+            </div>
+            <p class="ritual-output" id="ritualOutput" aria-live="polite">Выбери неделю сезона — и здесь появится ритуал.</p>
           </section>
         </article>
       </div>
