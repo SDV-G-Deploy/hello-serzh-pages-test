@@ -90,18 +90,29 @@
     { range: '30 января – 3 февраля', start: [1, 30], end: [2, 3], season: '鶏始乳 (Ниватори хадзимэтэ тоя ни цуку) — Куры начинают нестись', text: 'Цикл года замыкается знаком нового начала и приближения весны.' }
   ];
 
-  const fallbackRitualsSmall = [
-    'Сделай 5 медленных вдохов и один длинный выдох — просто чтобы вернуться в тело.',
-    'Потянись вверх и в стороны 40 секунд. Мягко расправь плечи и шею.',
-    'Налей воды и выпей несколько осознанных глотков без телефона в руках.',
-    'Посмотри в окно 30 секунд и найди один красивый цвет в этом моменте.',
-    'Запиши одну короткую мысль-поддержку себе на сегодня.',
-    'Сделай мини-уборку: верни 5 вещей на свои места.'
+  const fallbackRitualRecords = [
+    {
+      title: 'Резервный ритуал · Fallback #1',
+      season: 'Доступ к JSON временно недоступен',
+      text: 'Сделай 5 медленных вдохов и один длинный выдох. Затем назови вслух 3 вещи, за которые благодарна прямо сейчас.',
+      source: 'Локальный fallback'
+    },
+    {
+      title: 'Резервный ритуал · Fallback #2',
+      season: 'Доступ к JSON временно недоступен',
+      text: 'Налей воды, выпей несколько спокойных глотков и мягко потяни шею и плечи 40 секунд.',
+      source: 'Локальный fallback'
+    },
+    {
+      title: 'Резервный ритуал · Fallback #3',
+      season: 'Доступ к JSON временно недоступен',
+      text: 'Посмотри в окно одну минуту: найди 1 цвет, 1 форму и 1 движение, которые сейчас поддерживают тебя.',
+      source: 'Локальный fallback'
+    }
   ];
 
   const RITUALS_JSON_PATH = 'assets/japanese_72_microseasons_unique_rituals.json';
   const FAVORITE_RITUALS_STORAGE_KEY = 'lenochka.favoriteRituals.v1';
-  let ritualsBySekkiExternal = null;
 
   const monthLengths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   const monthNames = [
@@ -110,7 +121,8 @@
   ];
 
   let currentNote = null;
-  let currentRitualPool = [];
+  let allRitualRecords = [];
+  let currentRitualRecord = null;
   let currentRitualText = '';
   let lastRitualIndex = -1;
   let favoriteRituals = [];
@@ -202,12 +214,74 @@
     return idx;
   }
 
-  function getFallbackPool() {
-    return fallbackRitualsSmall.filter(Boolean);
-  }
-
   function normalizeRitualText(text) {
     return typeof text === 'string' ? text.trim() : '';
+  }
+
+  function extractStringsDeep(input, collector) {
+    if (typeof input === 'string') {
+      const normalized = normalizeRitualText(input);
+      if (normalized) collector.push(normalized);
+      return;
+    }
+
+    if (Array.isArray(input)) {
+      input.forEach(function (item) {
+        extractStringsDeep(item, collector);
+      });
+      return;
+    }
+
+    if (input && typeof input === 'object') {
+      Object.values(input).forEach(function (value) {
+        extractStringsDeep(value, collector);
+      });
+    }
+  }
+
+  function ritualRecordToDisplay(record) {
+    if (!record || typeof record !== 'object') return '';
+
+    const lines = [];
+    const preferredKeys = [
+      'microseason', 'microSeason', 'sekki', 'season', 'seasonJa', 'title', 'titleJa',
+      'name', 'nameJa', 'ja', 'jp', 'romaji', 'translation', 'text', 'ritual', 'action',
+      'description', 'notes', 'source'
+    ];
+
+    preferredKeys.forEach(function (key) {
+      const value = record[key];
+      const normalized = normalizeRitualText(typeof value === 'string' || typeof value === 'number' ? String(value) : '');
+      if (normalized) lines.push(normalized);
+    });
+
+    const restStrings = [];
+    Object.keys(record).forEach(function (key) {
+      if (preferredKeys.includes(key)) return;
+      const value = record[key];
+      if (typeof value === 'string' || typeof value === 'number') {
+        const normalized = normalizeRitualText(String(value));
+        if (normalized) restStrings.push(`${key}: ${normalized}`);
+      } else if (value && typeof value === 'object') {
+        const nested = [];
+        extractStringsDeep(value, nested);
+        if (nested.length) restStrings.push(`${key}: ${nested.join(' · ')}`);
+      }
+    });
+
+    return uniqueRituals(lines.concat(restStrings)).join('\n');
+  }
+
+  function makeRitualRecord(raw, indexHint) {
+    if (typeof raw === 'string') {
+      return { display: normalizeRitualText(raw), raw: raw, id: `string-${indexHint}` };
+    }
+
+    if (raw && typeof raw === 'object') {
+      return { display: ritualRecordToDisplay(raw), raw: raw, id: `obj-${indexHint}` };
+    }
+
+    return { display: '', raw: raw, id: `unknown-${indexHint}` };
   }
 
   function uniqueRituals(list) {
@@ -224,6 +298,16 @@
     return unique;
   }
 
+  function uniqueRitualRecords(records) {
+    const seen = new Set();
+    return (Array.isArray(records) ? records : []).filter(function (record) {
+      const key = normalizeRitualText(record && record.display);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
   function detectLocalStorage() {
     try {
       const testKey = '__lenochka_storage_probe__';
@@ -235,35 +319,54 @@
     }
   }
 
+  function hydrateFavoriteRecords(list) {
+    return uniqueRitualRecords((Array.isArray(list) ? list : []).map(function (item, index) {
+      if (typeof item === 'string') {
+        return makeRitualRecord(item, index);
+      }
+      if (item && typeof item === 'object') {
+        if (typeof item.display === 'string' && item.display.trim()) {
+          return { display: item.display.trim(), raw: item.raw || item.display, id: item.id || `favorite-${index}` };
+        }
+        return makeRitualRecord(item.raw || item, index);
+      }
+      return makeRitualRecord('', index);
+    }));
+  }
+
   function loadFavoriteRituals() {
     if (!canUseLocalStorage) {
-      favoriteRituals = uniqueRituals(memoryFavoriteRituals);
+      favoriteRituals = hydrateFavoriteRecords(memoryFavoriteRituals);
       return;
     }
 
     try {
       const raw = window.localStorage.getItem(FAVORITE_RITUALS_STORAGE_KEY);
       const parsed = raw ? JSON.parse(raw) : [];
-      favoriteRituals = uniqueRituals(parsed);
+      favoriteRituals = hydrateFavoriteRecords(parsed);
     } catch (error) {
       console.warn('Favorite rituals storage read failed, switching to in-memory mode.', error);
       canUseLocalStorage = false;
-      favoriteRituals = uniqueRituals(memoryFavoriteRituals);
+      favoriteRituals = hydrateFavoriteRecords(memoryFavoriteRituals);
     }
   }
 
   function persistFavoriteRituals() {
+    const serializable = favoriteRituals.map(function (item) {
+      return { display: item.display, raw: item.raw };
+    });
+
     if (!canUseLocalStorage) {
-      memoryFavoriteRituals = uniqueRituals(favoriteRituals);
+      memoryFavoriteRituals = serializable;
       return;
     }
 
     try {
-      window.localStorage.setItem(FAVORITE_RITUALS_STORAGE_KEY, JSON.stringify(uniqueRituals(favoriteRituals)));
+      window.localStorage.setItem(FAVORITE_RITUALS_STORAGE_KEY, JSON.stringify(serializable));
     } catch (error) {
       console.warn('Favorite rituals storage write failed, switching to in-memory mode.', error);
       canUseLocalStorage = false;
-      memoryFavoriteRituals = uniqueRituals(favoriteRituals);
+      memoryFavoriteRituals = serializable;
     }
   }
 
@@ -271,12 +374,23 @@
     if (!ritualFavoriteToggleBtn) return;
 
     const current = normalizeRitualText(currentRitualText);
-    const isFavorite = Boolean(current) && favoriteRituals.includes(current);
+    const isFavorite = Boolean(current) && favoriteRituals.some(function (item) { return item.display === current; });
 
     ritualFavoriteToggleBtn.classList.toggle('is-favorite', isFavorite);
     ritualFavoriteToggleBtn.setAttribute('aria-pressed', String(isFavorite));
     ritualFavoriteToggleBtn.textContent = isFavorite ? '★ В любимых' : '☆ В любимые';
     ritualFavoriteToggleBtn.disabled = !current;
+  }
+
+  function showRitualRecord(record) {
+    currentRitualRecord = record || null;
+    currentRitualText = normalizeRitualText(record && record.display);
+
+    if (ritualOutput) {
+      ritualOutput.textContent = currentRitualText || 'Пока не удалось загрузить ритуал. Попробуй ещё раз.';
+    }
+
+    updateFavoriteToggleUi();
   }
 
   function renderFavoriteRitualsList() {
@@ -291,16 +405,14 @@
 
     ritualFavoritesEmpty.hidden = true;
 
-    favoriteRituals.forEach(function (ritualText) {
+    favoriteRituals.forEach(function (record) {
       const li = document.createElement('li');
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'ritual-favorite-item';
-      button.textContent = ritualText;
+      button.textContent = record.display;
       button.addEventListener('click', function () {
-        currentRitualText = ritualText;
-        if (ritualOutput) ritualOutput.textContent = ritualText;
-        updateFavoriteToggleUi();
+        showRitualRecord(record);
       });
       li.appendChild(button);
       ritualFavoritesList.appendChild(li);
@@ -311,9 +423,9 @@
     const current = normalizeRitualText(currentRitualText);
     if (!current) return;
 
-    if (!favoriteRituals.includes(current)) {
-      favoriteRituals.push(current);
-      favoriteRituals = uniqueRituals(favoriteRituals);
+    if (!favoriteRituals.some(function (item) { return item.display === current; })) {
+      favoriteRituals.push(currentRitualRecord || makeRitualRecord(current, favoriteRituals.length));
+      favoriteRituals = uniqueRitualRecords(favoriteRituals);
       persistFavoriteRituals();
       renderFavoriteRitualsList();
     }
@@ -328,74 +440,78 @@
     ritualFavoritesOpenBtn.setAttribute('aria-expanded', String(nextState));
   }
 
+  function getFallbackRecords() {
+    return fallbackRitualRecords.map(function (item, index) {
+      return makeRitualRecord(item, index);
+    });
+  }
+
+  function flattenRitualRecords(data) {
+    const records = [];
+
+    if (Array.isArray(data && data.rituals)) {
+      data.rituals.forEach(function (item, index) {
+        records.push(makeRitualRecord(item, index));
+      });
+    }
+
+    if (Array.isArray(data && data.records)) {
+      data.records.forEach(function (item, index) {
+        records.push(makeRitualRecord(item, `records-${index}`));
+      });
+    }
+
+    if (Array.isArray(data && data.ritualsBySekki)) {
+      data.ritualsBySekki.forEach(function (pool, poolIndex) {
+        if (!Array.isArray(pool)) return;
+        pool.forEach(function (item, itemIndex) {
+          records.push(makeRitualRecord(item, `sekki-${poolIndex}-${itemIndex}`));
+        });
+      });
+    }
+
+    return uniqueRitualRecords(records);
+  }
+
   async function loadExternalRituals() {
     try {
       const response = await fetch(RITUALS_JSON_PATH, { cache: 'no-store' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const data = await response.json();
-      const pools = data && data.ritualsBySekki;
-      const isValid = Array.isArray(pools) && pools.length > 0;
-      if (!isValid) throw new Error('Invalid rituals JSON structure');
+      const records = flattenRitualRecords(data);
+      if (!records.length) throw new Error('Invalid rituals JSON structure');
 
-      ritualsBySekkiExternal = pools.map(function (pool) {
-        return Array.isArray(pool) ? pool.filter(Boolean) : [];
-      });
-
-      if (currentNote) {
-        updateRitualForNote(currentNote);
-      }
+      allRitualRecords = records;
     } catch (error) {
       console.warn('Failed to load external rituals JSON, using fallback list.', error);
-      ritualsBySekkiExternal = null;
+      allRitualRecords = getFallbackRecords();
+    }
+
+    if (!currentRitualText) {
+      showRandomRitual();
     }
   }
 
-  function getRitualPoolByNote(note) {
-    if (!note) return [];
-
-    const seasonIndex = seasonalNotes.indexOf(note);
-    if (seasonIndex < 0) return [];
-
-    const sekkiIndex = Math.floor(seasonIndex / 3);
-    const source = ritualsBySekkiExternal;
-    const pool = source && source[sekkiIndex];
-
-    if (Array.isArray(pool) && pool.length > 0) {
-      return pool;
+  function showRandomRitual() {
+    if (!allRitualRecords.length) {
+      allRitualRecords = getFallbackRecords();
     }
 
-    return getFallbackPool();
-  }
-
-  function renderRitualByPool(pool) {
-    if (!ritualOutput) return;
-
-    if (!Array.isArray(pool) || pool.length === 0) {
-      currentRitualText = '';
-      ritualOutput.textContent = 'Пока нет ритуала для этой недели. Нажми «Новый ритуал» позже.';
-      lastRitualIndex = -1;
-      updateFavoriteToggleUi();
+    if (!allRitualRecords.length) {
+      showRitualRecord(makeRitualRecord('Ритуалы временно недоступны. Попробуй обновить страницу чуть позже.', 'empty'));
       return;
     }
 
-    const ritualIndex = randomDifferentIndex(pool.length, lastRitualIndex);
+    const ritualIndex = randomDifferentIndex(allRitualRecords.length, lastRitualIndex);
     lastRitualIndex = ritualIndex;
-    currentRitualText = pool[ritualIndex];
-    ritualOutput.textContent = currentRitualText;
-    updateFavoriteToggleUi();
-  }
-
-  function updateRitualForNote(note) {
-    currentRitualPool = getRitualPoolByNote(note);
-    renderRitualByPool(currentRitualPool);
+    showRitualRecord(allRitualRecords[ritualIndex]);
   }
 
   function renderNote(note, titlePrefix) {
     if (!note) {
       currentNote = null;
       output.textContent = 'Не удалось подобрать неделю сезона для этой даты.';
-      updateRitualForNote(null);
       document.dispatchEvent(new CustomEvent('lenochka:season-change', {
         detail: { note: null, titlePrefix: titlePrefix || '' }
       }));
@@ -410,7 +526,6 @@
       `${note.season}\n` +
       `${note.text}`;
 
-    updateRitualForNote(note);
     document.dispatchEvent(new CustomEvent('lenochka:season-change', {
       detail: { note, titlePrefix: titlePrefix || '' }
     }));
@@ -533,9 +648,7 @@
   }
 
   if (ritualRefreshBtn) {
-    ritualRefreshBtn.addEventListener('click', function () {
-      renderRitualByPool(currentRitualPool);
-    });
+    ritualRefreshBtn.addEventListener('click', showRandomRitual);
   }
 
   if (ritualFavoriteToggleBtn) {

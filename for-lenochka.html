@@ -57,19 +57,11 @@
       transform: translate(18%, 14%);
     }
 
-    .lenochka-content {
+    .lenochka-love {
       position: relative;
       z-index: 2;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: inherit;
-      text-align: center;
-      padding: clamp(8px, 2vw, 18px);
-    }
-
-    .lenochka-love {
-      width: min(980px, 100%);
+      width: min(1024px, 100%);
+      margin: clamp(8px, 2vw, 18px) auto;
       border: 1px solid rgba(255, 255, 255, .24);
       border-radius: 18px;
       padding: clamp(18px, 5vw, 34px);
@@ -77,10 +69,15 @@
       backdrop-filter: blur(2px);
       box-shadow: 0 18px 36px rgba(15, 23, 42, .45);
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: clamp(14px, 3vw, 26px);
-      align-items: stretch;
+      gap: clamp(14px, 3vw, 22px);
       text-align: left;
+    }
+
+    .lenochka-top-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(12px, 2vw, 18px);
+      align-items: stretch;
     }
 
     .lenochka-main h1 {
@@ -488,14 +485,15 @@
     }
 
     .ritual-output {
-      min-height: 70px;
+      min-height: 118px;
       margin: 0;
       padding: 12px;
       border-radius: 10px;
       background: rgba(255, 255, 255, .1);
       color: #ffe6f0;
-      line-height: 1.45;
-      white-space: pre-line;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
     .hearts-layer {
@@ -536,8 +534,10 @@
     @media (max-width: 720px) {
       .lenochka-wrap { min-height: 58vh; }
       .lenochka-love {
-        grid-template-columns: 1fr;
         text-align: center;
+      }
+      .lenochka-top-grid {
+        grid-template-columns: 1fr;
       }
       .season-export-btn {
         width: 100%;
@@ -584,8 +584,8 @@
       <div class="season-backdrop" id="seasonBackdrop" aria-hidden="true"></div>
       <div class="hearts-layer" id="heartsLayer" aria-hidden="true"></div>
 
-      <div class="lenochka-content">
-        <article class="lenochka-love">
+      <article class="lenochka-love">
+        <section class="lenochka-top-grid" aria-label="Приветствие и послание">
           <div class="lenochka-main">
             <h1>FOR LENOCHKA</h1>
             <p>Леночка, ты делаешь этот мир теплее — спасибо за свет, нежность и улыбку каждый день 💖</p>
@@ -596,63 +596,62 @@
             <button class="message-btn" id="messageBtn" type="button">Сгенерировать послание 💌</button>
             <p class="message-output" id="messageOutput" aria-live="polite">Нажми на кнопку — и появится тёплое послание ✨</p>
           </section>
+        </section>
 
-          <section class="season-week-block" aria-labelledby="seasonWeekTitle">
-            <h2 id="seasonWeekTitle">Нагори: неделя сезона</h2>
-            <p class="season-week-hint">Используются краткие нейтральные описания в стиле «неделя сезона» (не дословные цитаты из книги).</p>
-            <div class="season-week-actions">
-              <button class="season-week-btn" id="seasonWeekRandomBtn" type="button">Случайная неделя сезона</button>
-              <button class="season-week-btn" id="seasonWeekTodayBtn" type="button">Неделя сезона на сегодня</button>
-            </div>
-            <div class="season-export-row">
-              <button class="season-export-btn" id="seasonCardSaveBtn" type="button">Сохранить момент (PNG)</button>
-              <p class="season-export-status" id="seasonCardStatus" aria-live="polite"></p>
-            </div>
-            <p class="season-week-output" id="seasonWeekOutput" aria-live="polite">Нажми кнопку, чтобы увидеть описание недели сезона.</p>
-            <p class="season-week-source">Источник: <a href="https://www.nippon.com/ru/features/h00124/" target="_blank" rel="noopener noreferrer">nippon.com/ru/features/h00124</a></p>
+        <section class="ritual-block" aria-labelledby="ritualTitle">
+          <h2 id="ritualTitle">Ритуал на 2 минуты</h2>
+          <p class="ritual-hint">Случайный микро-ритуал из полного набора 72 японских микросезонов (без привязки к текущей неделе).</p>
+          <div class="ritual-actions">
+            <button class="ritual-btn" id="ritualRefreshBtn" type="button">Новый ритуал</button>
+            <button class="ritual-btn subtle" id="ritualFavoriteToggleBtn" type="button" aria-pressed="false">☆ В любимые</button>
+            <button class="ritual-btn subtle" id="ritualFavoritesOpenBtn" type="button" aria-expanded="false" aria-controls="ritualFavoritesPanel">Любимые ритуалы</button>
+          </div>
+          <p class="ritual-output" id="ritualOutput" aria-live="polite">Нажми «Новый ритуал», чтобы получить случайный ритуал из всех 72.</p>
+          <section class="ritual-favorites-panel" id="ritualFavoritesPanel" hidden>
+            <p class="ritual-favorites-title">Нажми на ритуал, чтобы показать его снова в блоке выше.</p>
+            <ul class="ritual-favorites-list" id="ritualFavoritesList"></ul>
+            <p class="ritual-favorites-empty" id="ritualFavoritesEmpty">Пока нет любимых ритуалов.</p>
           </section>
+        </section>
 
+        <section class="season-week-block" aria-labelledby="seasonWeekTitle">
+          <h2 id="seasonWeekTitle">Нагори: неделя сезона</h2>
+          <p class="season-week-hint">Используются краткие нейтральные описания в стиле «неделя сезона» (не дословные цитаты из книги).</p>
+          <div class="season-week-actions">
+            <button class="season-week-btn" id="seasonWeekRandomBtn" type="button">Случайная неделя сезона</button>
+            <button class="season-week-btn" id="seasonWeekTodayBtn" type="button">Неделя сезона на сегодня</button>
+          </div>
+          <div class="season-export-row">
+            <button class="season-export-btn" id="seasonCardSaveBtn" type="button">Сохранить момент (PNG)</button>
+            <p class="season-export-status" id="seasonCardStatus" aria-live="polite"></p>
+          </div>
+          <p class="season-week-output" id="seasonWeekOutput" aria-live="polite">Нажми кнопку, чтобы увидеть описание недели сезона.</p>
+          <p class="season-week-source">Источник: <a href="https://www.nippon.com/ru/features/h00124/" target="_blank" rel="noopener noreferrer">nippon.com/ru/features/h00124</a></p>
+        </section>
 
-
-          <section class="lena-audio-block" aria-labelledby="lenaAudioTitle">
-            <h2 id="lenaAudioTitle">Ambient-плеер для настроения</h2>
-            <p class="lena-audio-meta" id="lenaAudioSeasonHint">Рекомендация сезона появится автоматически — включение только по твоему клику.</p>
-            <p class="lena-audio-track">Трек: For Lena BRD 2 — мягкий ambient фон</p>
-            <audio id="lenaAudio" preload="metadata" playsinline>
-              <source src="./assets/music/ForLenaBRD_2.mp3" type="audio/mpeg" />
-            </audio>
-            <div class="lena-audio-controls">
-              <div class="lena-audio-top">
-                <button class="lena-audio-btn" id="lenaAudioToggle" type="button" aria-label="Воспроизвести или поставить на паузу">▶ Play</button>
-                <span class="lena-audio-time" id="lenaAudioTime">0:00 / 0:00</span>
-                <span class="lena-audio-loop-badge" id="lenaAudioLoopBadge" aria-label="Повтор трека включен">🔁 Повтор: Вкл</span>
-              </div>
-              <div class="lena-audio-bottom">
-                <input class="lena-audio-range" id="lenaAudioSeek" type="range" min="0" max="100" value="0" step="0.1" aria-label="Прогресс воспроизведения" />
-              </div>
-              <div class="lena-audio-bottom">
-                <button class="lena-audio-btn" id="lenaAudioMute" type="button" aria-label="Выключить или включить звук">🔊 Звук</button>
-                <input class="lena-audio-range volume" id="lenaAudioVolume" type="range" min="0" max="1" value="0.2" step="0.01" aria-label="Громкость" />
-              </div>
+        <section class="lena-audio-block" aria-labelledby="lenaAudioTitle">
+          <h2 id="lenaAudioTitle">Ambient-плеер для настроения</h2>
+          <p class="lena-audio-meta" id="lenaAudioSeasonHint">Рекомендация сезона появится автоматически — включение только по твоему клику.</p>
+          <p class="lena-audio-track">Трек: For Lena BRD 2 — мягкий ambient фон</p>
+          <audio id="lenaAudio" preload="metadata" playsinline>
+            <source src="./assets/music/ForLenaBRD_2.mp3" type="audio/mpeg" />
+          </audio>
+          <div class="lena-audio-controls">
+            <div class="lena-audio-top">
+              <button class="lena-audio-btn" id="lenaAudioToggle" type="button" aria-label="Воспроизвести или поставить на паузу">▶ Play</button>
+              <span class="lena-audio-time" id="lenaAudioTime">0:00 / 0:00</span>
+              <span class="lena-audio-loop-badge" id="lenaAudioLoopBadge" aria-label="Повтор трека включен">🔁 Повтор: Вкл</span>
             </div>
-          </section>
-          <section class="ritual-block" aria-labelledby="ritualTitle">
-            <h2 id="ritualTitle">Ритуал на 2 минуты</h2>
-            <p class="ritual-hint">Короткое действие под ритм текущего малого сезона.</p>
-            <div class="ritual-actions">
-              <button class="ritual-btn" id="ritualRefreshBtn" type="button">Новый ритуал</button>
-              <button class="ritual-btn subtle" id="ritualFavoriteToggleBtn" type="button" aria-pressed="false">☆ В любимые</button>
-              <button class="ritual-btn subtle" id="ritualFavoritesOpenBtn" type="button" aria-expanded="false" aria-controls="ritualFavoritesPanel">Любимые ритуалы</button>
+            <div class="lena-audio-bottom">
+              <input class="lena-audio-range" id="lenaAudioSeek" type="range" min="0" max="100" value="0" step="0.1" aria-label="Прогресс воспроизведения" />
             </div>
-            <p class="ritual-output" id="ritualOutput" aria-live="polite">Выбери неделю сезона — и здесь появится ритуал.</p>
-            <section class="ritual-favorites-panel" id="ritualFavoritesPanel" hidden>
-              <p class="ritual-favorites-title">Нажми на ритуал, чтобы показать его снова в блоке выше.</p>
-              <ul class="ritual-favorites-list" id="ritualFavoritesList"></ul>
-              <p class="ritual-favorites-empty" id="ritualFavoritesEmpty">Пока нет любимых ритуалов.</p>
-            </section>
-          </section>
-        </article>
-      </div>
+            <div class="lena-audio-bottom">
+              <button class="lena-audio-btn" id="lenaAudioMute" type="button" aria-label="Выключить или включить звук">🔊 Звук</button>
+              <input class="lena-audio-range volume" id="lenaAudioVolume" type="range" min="0" max="1" value="0.2" step="0.01" aria-label="Громкость" />
+            </div>
+          </div>
+        </section>
+      </article>
     </section>
   </main>
 
