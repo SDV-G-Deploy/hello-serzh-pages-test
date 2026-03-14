@@ -159,3 +159,21 @@ Next:
 
 New rule:
 - For puzzle MVPs, include first-10-seconds onboarding directly in HUD, not only in external explanation.
+
+## 2026-03-14 (daily MVP ship)
+
+- Updated daily digest and selected winner idea: **Tap Window Rush** (best score by mobile fit + MVP speed + replay loop + low risk).
+- Created prompt plan: `demos/tap-window-rush/PROMPT_PLAN.md`.
+- Implemented playable MVP: `demos/tap-window-rush/index.html`.
+- Added game card in `games.html` with status `playable`.
+- Updated `ROADMAP.md` (TODAY_MVP/BACKLOG/DONE).
+
+What worked:
+- One-input timing loop даёт быстрый “ещё раз” эффект без сложной логики.
+- Динамическое сужение окна + рост скорости создают понятный skill ramp.
+
+New rule:
+- Для daily MVP сначала фиксировать 1-input loop и только потом добавлять вторичные фичи.
+
+Next:
+- Добавить опциональный near-miss бонус (+feedback/haptic) и lightweight event hooks (`run_start`, `tap_hit`, `tap_miss`, `run_end`).

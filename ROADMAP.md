@@ -30,20 +30,21 @@ SLA: one daily digest run should produce one new playable MVP link.
 ## Current focus (seed)
 
 ### TODAY_MVP (candidate)
-- Idea: **Fair Shot Arena v2 (readability + telemetry hooks)**
-- Why: быстро повысим диагностическую ценность RNG/fairness тестов
+- Idea: **Thumb Zipline**
+- Why: логичное развитие one-thumb survival после тайминговых MVP
 - Complexity: low
 - Priority: high
-- Next test (2–4h): явные зоны hit/miss + hooks run_start/shot_hit/shot_miss/run_end
+- Next test (2–4h): hold/release высота + near-miss бонус + мягкий speed ramp
 
 ### BACKLOG
-1. Lane Surfer (tap to switch lanes, avoid obstacles)
-2. Pulse Catcher (timed tap accuracy with combo)
-3. Drift Dot (hold/release movement with narrow gaps)
-4. Merge Sprint 45 (45s loop + лёгкая мета)
+1. Thumb Zipline (hold/release corridor survival)
+2. Lane Pulse Flip (tap lane swap + color gates)
+3. Fair Shot Arena v2 (readability + telemetry hooks)
+4. Daily Tower Seed v2 (daily modifiers)
 
 ## Done log
 
+- 2026-03-14: Tap Window Rush MVP shipped in `demos/tap-window-rush/` (one-tap timing windows, streak multiplier, speed ramp, local best)
 - 2026-03-13: Merge Sprint 45 MVP shipped in `demos/merge-sprint-45/` (3x3 merge sprint, chain reactions, 45s pressure loop, local best)
 - 2026-03-13: Drift Dot MVP shipped in `demos/drift-dot/` (60s hold/release survival, moving gap walls, gradual ramp, local best)
 - 2026-03-13: Pulse Catcher MVP shipped in `demos/pulse-catcher/` (45s tap-timing loop, accuracy tiers, streak multiplier, local best)

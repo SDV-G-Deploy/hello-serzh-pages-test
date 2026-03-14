@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Tap Window Rush</title>
+  <style>
+    :root {
+      --bg: #071023;
+      --card: #101b34;
+      --line: rgba(255,255,255,.14);
+      --text: #ecf3ff;
+      --muted: #9fb0d4;
+      --good: #22c55e;
+      --bad: #ef4444;
+      --accent: #38bdf8;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: radial-gradient(circle at top, #10254a, var(--bg)); color: var(--text); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    .app { max-width: 760px; margin: 0 auto; min-height: 100dvh; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+    .card { background: rgba(16,27,52,.88); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+    h1 { margin: 0; font-size: clamp(24px, 4vw, 34px); }
+    p { margin: 6px 0 0; color: var(--muted); }
+    .hud { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .stat { background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 12px; padding: 8px; }
+    .stat b { display: block; font-size: 20px; }
+    .stat span { color: var(--muted); font-size: 12px; }
+    .lane-wrap { padding: 16px 12px 8px; }
+    .lane { position: relative; height: 22px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; border: 1px solid var(--line); }
+    .window { position: absolute; top: 0; bottom: 0; background: linear-gradient(90deg, rgba(34,197,94,.85), rgba(74,222,128,.95)); border-radius: 999px; }
+    .cursor { position: absolute; top: -5px; width: 10px; height: 32px; background: #fff; border-radius: 8px; box-shadow: 0 0 14px rgba(255,255,255,.7); }
+    .status { min-height: 24px; margin-top: 10px; font-weight: 700; letter-spacing: .2px; }
+    .ok { color: #86efac; }
+    .bad { color: #fca5a5; }
+    .controls { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    button { border: 0; border-radius: 14px; padding: 14px 16px; font-size: 18px; font-weight: 800; color: #031225; background: linear-gradient(135deg, #7dd3fc, #38bdf8); }
+    button:active { transform: scale(.98); }
+    .small { font-size: 14px; color: var(--muted); text-align: center; }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="card">
+      <h1>Tap Window Rush</h1>
+      <p>Тапай в зелёное окно. 45 секунд. Одна кнопка. Быстрый реванш.</p>
+    </section>
+
+    <section class="card hud">
+      <div class="stat"><b id="score">0</b><span>score</span></div>
+      <div class="stat"><b id="streak">0</b><span>streak</span></div>
+      <div class="stat"><b id="strikes">0</b><span>strikes</span></div>
+      <div class="stat"><b id="time">45.0</b><span>time</span></div>
+    </section>
+
+    <section class="card lane-wrap">
+      <div class="lane" id="lane">
+        <div class="window" id="window"></div>
+        <div class="cursor" id="cursor"></div>
+      </div>
+      <div class="status" id="status">Нажми START и попади в зелёную зону.</div>
+    </section>
+
+    <section class="controls">
+      <button id="tapBtn">START</button>
+      <button id="restartBtn" style="display:none;background:linear-gradient(135deg,#34d399,#10b981);">RESTART</button>
+      <div class="small">Best: <span id="best">0</span></div>
+    </section>
+  </main>
+
+  <script>
+    const CONFIG = {
+      duration: 45,
+      baseWindow: 0.22,
+      minWindow: 0.09,
+      windowShrink: 0.004,
+      baseSpeed: 0.55,
+      speedStep: 0.03,
+      maxSpeed: 1.6
+    };
+
+    const el = {
+      score: document.getElementById('score'),
+      streak: document.getElementById('streak'),
+      strikes: document.getElementById('strikes'),
+      time: document.getElementById('time'),
+      best: document.getElementById('best'),
+      status: document.getElementById('status'),
+      lane: document.getElementById('lane'),
+      window: document.getElementById('window'),
+      cursor: document.getElementById('cursor'),
+      tapBtn: document.getElementById('tapBtn'),
+      restartBtn: document.getElementById('restartBtn')
+    };
+
+    let state;
+    const bestKey = 'tapWindowRushBest';
+    let best = Number(localStorage.getItem(bestKey) || 0);
+    el.best.textContent = best;
+
+    function reset() {
+      state = {
+        running: false,
+        started: false,
+        score: 0,
+        streak: 0,
+        strikes: 0,
+        t: 0,
+        timeLeft: CONFIG.duration,
+        speed: CONFIG.baseSpeed,
+        windowSize: CONFIG.baseWindow,
+        windowStart: 0.34,
+        lastTs: 0,
+      };
+      render();
+      setStatus('Готово. Нажми START.', '');
+      el.tapBtn.textContent = 'START';
+      el.restartBtn.style.display = 'none';
+    }
+
+    function setStatus(text, cls) {
+      el.status.className = 'status ' + cls;
+      el.status.textContent = text;
+    }
+
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+    function rnd(min, max) { return min + Math.random() * (max - min); }
+
+    function rerollWindow() {
+      state.windowStart = rnd(0.05, 0.95 - state.windowSize);
+    }
+
+    function render() {
+      el.score.textContent = state.score;
+      el.streak.textContent = state.streak;
+      el.strikes.textContent = state.strikes;
+      el.time.textContent = state.timeLeft.toFixed(1);
+
+      const laneW = el.lane.clientWidth;
+      const wLeft = state.windowStart * laneW;
+      const wWidth = state.windowSize * laneW;
+      el.window.style.left = wLeft + 'px';
+      el.window.style.width = wWidth + 'px';
+
+      const cursorX = (state.t % 1) * laneW;
+      el.cursor.style.left = (cursorX - 5) + 'px';
+    }
+
+    function hitCheck() {
+      const x = state.t % 1;
+      const ok = x >= state.windowStart && x <= state.windowStart + state.windowSize;
+      if (ok) {
+        state.streak += 1;
+        const gain = 10 + Math.min(40, state.streak * 2);
+        state.score += gain;
+        state.windowSize = clamp(state.windowSize - CONFIG.windowShrink, CONFIG.minWindow, 1);
+        state.speed = clamp(state.speed + CONFIG.speedStep, CONFIG.baseSpeed, CONFIG.maxSpeed);
+        setStatus(`HIT +${gain} · streak ${state.streak}`, 'ok');
+      } else {
+        state.strikes += 1;
+        state.streak = 0;
+        state.score = Math.max(0, state.score - 8);
+        state.windowSize = clamp(state.windowSize + 0.01, CONFIG.minWindow, 0.28);
+        setStatus('MISS -8 · streak reset', 'bad');
+      }
+      rerollWindow();
+      render();
+    }
+
+    function endRun() {
+      state.running = false;
+      if (state.score > best) {
+        best = state.score;
+        localStorage.setItem(bestKey, String(best));
+        el.best.textContent = best;
+      }
+      setStatus(`Финиш! score ${state.score} · best ${best}`, '');
+      el.tapBtn.style.display = 'none';
+      el.restartBtn.style.display = 'block';
+    }
+
+    function frame(ts) {
+      if (!state.running) return;
+      if (!state.lastTs) state.lastTs = ts;
+      const dt = (ts - state.lastTs) / 1000;
+      state.lastTs = ts;
+
+      state.timeLeft -= dt;
+      if (state.timeLeft <= 0) {
+        state.timeLeft = 0;
+        render();
+        endRun();
+        return;
+      }
+
+      state.t += dt * state.speed;
+      render();
+      requestAnimationFrame(frame);
+    }
+
+    function startRun() {
+      if (state.running) return;
+      if (!state.started) {
+        state.started = true;
+        state.running = true;
+        state.lastTs = 0;
+        el.tapBtn.textContent = 'TAP NOW';
+        setStatus('Лови тайминг в зелёном окне.', '');
+        requestAnimationFrame(frame);
+      }
+    }
+
+    el.tapBtn.addEventListener('click', () => {
+      if (!state.started) startRun();
+      else if (state.running) hitCheck();
+    });
+
+    el.restartBtn.addEventListener('click', () => {
+      el.tapBtn.style.display = 'block';
+      reset();
+    });
+
+    reset();
+  </script>
+</body>
+</html>
