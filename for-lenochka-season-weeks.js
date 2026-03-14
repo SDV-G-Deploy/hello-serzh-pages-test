@@ -339,6 +339,9 @@
       currentNote = null;
       output.textContent = 'Не удалось подобрать неделю сезона для этой даты.';
       updateRitualForNote(null);
+      document.dispatchEvent(new CustomEvent('lenochka:season-change', {
+        detail: { note: null, titlePrefix: titlePrefix || '' }
+      }));
       return;
     }
 
@@ -351,6 +354,9 @@
       `${note.text}`;
 
     updateRitualForNote(note);
+    document.dispatchEvent(new CustomEvent('lenochka:season-change', {
+      detail: { note, titlePrefix: titlePrefix || '' }
+    }));
   }
 
   function wrappedText(ctx, text, x, y, maxWidth, lineHeight) {

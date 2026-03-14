@@ -266,6 +266,93 @@
       white-space: pre-line;
     }
 
+
+
+    .lena-audio-block {
+      grid-column: 1 / -1;
+      border: 1px solid rgba(255, 255, 255, .2);
+      border-radius: 14px;
+      padding: clamp(14px, 2.6vw, 20px);
+      background: rgba(15, 23, 42, .26);
+      display: grid;
+      gap: 10px;
+    }
+
+    .lena-audio-block h2 {
+      margin: 0;
+      text-align: center;
+      color: #fde7f3;
+      font-size: clamp(16px, 2.3vw, 20px);
+    }
+
+    .lena-audio-meta,
+    .lena-audio-track {
+      margin: 0;
+      text-align: center;
+      color: rgba(255, 235, 245, .9);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .lena-audio-track {
+      font-size: 14px;
+      color: #ffe7f3;
+    }
+
+    .lena-audio-controls {
+      display: grid;
+      gap: 10px;
+    }
+
+    .lena-audio-top,
+    .lena-audio-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .lena-audio-btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 9px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #221a2c;
+      background: linear-gradient(135deg, #fbcfe8, #c4b5fd);
+      cursor: pointer;
+      transition: transform .18s ease, filter .18s ease;
+    }
+
+    .lena-audio-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.04);
+    }
+
+    .lena-audio-btn:focus-visible {
+      outline: 2px solid #fce7f3;
+      outline-offset: 2px;
+    }
+
+    .lena-audio-time {
+      color: #fde7f3;
+      font-size: 13px;
+      min-width: 84px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .lena-audio-range {
+      width: min(100%, 440px);
+      accent-color: #f472b6;
+      cursor: pointer;
+    }
+
+    .lena-audio-range.volume {
+      width: min(170px, 54vw);
+      accent-color: #a78bfa;
+    }
     .ritual-block {
       grid-column: 1 / -1;
       border: 1px solid rgba(255, 255, 255, .2);
@@ -440,6 +527,29 @@
             <p class="season-week-source">Источник: <a href="https://www.nippon.com/ru/features/h00124/" target="_blank" rel="noopener noreferrer">nippon.com/ru/features/h00124</a></p>
           </section>
 
+
+
+          <section class="lena-audio-block" aria-labelledby="lenaAudioTitle">
+            <h2 id="lenaAudioTitle">Ambient-плеер для настроения</h2>
+            <p class="lena-audio-meta" id="lenaAudioSeasonHint">Рекомендация сезона появится автоматически — включение только по твоему клику.</p>
+            <p class="lena-audio-track">Трек: For Lena BRD 2 — мягкий ambient фон</p>
+            <audio id="lenaAudio" preload="metadata" playsinline>
+              <source src="./assets/music/ForLenaBRD_2.mp3" type="audio/mpeg" />
+            </audio>
+            <div class="lena-audio-controls">
+              <div class="lena-audio-top">
+                <button class="lena-audio-btn" id="lenaAudioToggle" type="button" aria-label="Воспроизвести или поставить на паузу">▶ Play</button>
+                <span class="lena-audio-time" id="lenaAudioTime">0:00 / 0:00</span>
+              </div>
+              <div class="lena-audio-bottom">
+                <input class="lena-audio-range" id="lenaAudioSeek" type="range" min="0" max="100" value="0" step="0.1" aria-label="Прогресс воспроизведения" />
+              </div>
+              <div class="lena-audio-bottom">
+                <button class="lena-audio-btn" id="lenaAudioMute" type="button" aria-label="Выключить или включить звук">🔊 Звук</button>
+                <input class="lena-audio-range volume" id="lenaAudioVolume" type="range" min="0" max="1" value="0.7" step="0.01" aria-label="Громкость" />
+              </div>
+            </div>
+          </section>
           <section class="ritual-block" aria-labelledby="ritualTitle">
             <h2 id="ritualTitle">Ритуал на 2 минуты</h2>
             <p class="ritual-hint">Короткое действие под ритм текущего малого сезона.</p>
@@ -646,6 +756,108 @@
 
       button.addEventListener('click', showMessage);
     })();
+
+    (function () {
+      const audio = document.getElementById('lenaAudio');
+      const toggleBtn = document.getElementById('lenaAudioToggle');
+      const muteBtn = document.getElementById('lenaAudioMute');
+      const seek = document.getElementById('lenaAudioSeek');
+      const volume = document.getElementById('lenaAudioVolume');
+      const time = document.getElementById('lenaAudioTime');
+      const seasonHint = document.getElementById('lenaAudioSeasonHint');
+
+      if (!audio || !toggleBtn || !muteBtn || !seek || !volume || !time) return;
+
+      const fallbackSrc = 'https://raw.githubusercontent.com/SDV-G-Deploy/VizuPlayer/main/assets/music/ForLenaBRD_2.mp3';
+      let fallbackTried = false;
+      let seeking = false;
+
+      function formatTime(seconds) {
+        if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${String(secs).padStart(2, '0')}`;
+      }
+
+      function updateTimeUi() {
+        const current = audio.currentTime || 0;
+        const total = audio.duration || 0;
+        time.textContent = `${formatTime(current)} / ${formatTime(total)}`;
+
+        if (!seeking) {
+          const progress = total > 0 ? (current / total) * 100 : 0;
+          seek.value = String(progress);
+        }
+      }
+
+      function updateButtons() {
+        toggleBtn.textContent = audio.paused ? '▶ Play' : '⏸ Pause';
+        muteBtn.textContent = audio.muted || audio.volume === 0 ? '🔇 Mute' : '🔊 Звук';
+      }
+
+      toggleBtn.addEventListener('click', function () {
+        if (audio.paused) {
+          audio.play().catch(function () {});
+        } else {
+          audio.pause();
+        }
+      });
+
+      muteBtn.addEventListener('click', function () {
+        audio.muted = !audio.muted;
+        updateButtons();
+      });
+
+      volume.addEventListener('input', function () {
+        const nextVolume = Number(volume.value);
+        audio.volume = Number.isFinite(nextVolume) ? nextVolume : 0.7;
+        if (audio.volume > 0 && audio.muted) {
+          audio.muted = false;
+        }
+        updateButtons();
+      });
+
+      seek.addEventListener('input', function () {
+        seeking = true;
+      });
+
+      seek.addEventListener('change', function () {
+        const total = audio.duration || 0;
+        const progress = Number(seek.value);
+        if (total > 0 && Number.isFinite(progress)) {
+          audio.currentTime = (progress / 100) * total;
+        }
+        seeking = false;
+        updateTimeUi();
+      });
+
+      audio.addEventListener('timeupdate', updateTimeUi);
+      audio.addEventListener('loadedmetadata', updateTimeUi);
+      audio.addEventListener('play', updateButtons);
+      audio.addEventListener('pause', updateButtons);
+      audio.addEventListener('volumechange', updateButtons);
+
+      audio.addEventListener('error', function () {
+        if (fallbackTried) return;
+        fallbackTried = true;
+        audio.src = fallbackSrc;
+        audio.load();
+        if (seasonHint) {
+          seasonHint.textContent = 'Локальный файл недоступен, использую резервный поток с GitHub Raw.';
+        }
+      });
+
+      document.addEventListener('lenochka:season-change', function (event) {
+        const note = event && event.detail && event.detail.note;
+        if (!note || !seasonHint) return;
+        seasonHint.textContent = `Звучание для текущего настроения сезона: ${note.range} — ${note.season}`;
+      });
+
+      audio.volume = Number(volume.value);
+      updateTimeUi();
+      updateButtons();
+    })();
+
   </script>
 </body>
 </html>
