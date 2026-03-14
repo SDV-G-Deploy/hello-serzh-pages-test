@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Снежана ⚡ — FOR LENOCHKA</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <style>
+    .lenochka-wrap {
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      min-height: clamp(360px, 70vh, 620px);
+    }
+
+    .lenochka-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: inherit;
+      text-align: center;
+    }
+
+    .lenochka-love {
+      max-width: 640px;
+      border: 1px solid rgba(255, 255, 255, .24);
+      border-radius: 18px;
+      padding: clamp(18px, 5vw, 34px);
+      background: linear-gradient(155deg, rgba(244, 114, 182, .2), rgba(129, 140, 248, .18));
+      backdrop-filter: blur(2px);
+      box-shadow: 0 18px 36px rgba(15, 23, 42, .45);
+    }
+
+    .lenochka-love h1 {
+      margin: 0 0 10px;
+      letter-spacing: .03em;
+      text-wrap: balance;
+    }
+
+    .lenochka-love p {
+      margin: 0;
+      color: #f8d5e8;
+      font-size: clamp(16px, 2.6vw, 20px);
+      line-height: 1.45;
+    }
+
+    .hearts-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .floating-heart {
+      position: absolute;
+      bottom: -32px;
+      left: 0;
+      opacity: .78;
+      color: #fb7185;
+      font-size: 18px;
+      text-shadow: 0 4px 18px rgba(244, 63, 94, .45);
+      animation: heart-rise linear forwards;
+      will-change: transform, opacity;
+      user-select: none;
+    }
+
+    @keyframes heart-rise {
+      0% {
+        transform: translate3d(var(--x-start), 0, 0) scale(var(--scale));
+        opacity: 0;
+      }
+      10% {
+        opacity: .78;
+      }
+      100% {
+        transform: translate3d(calc(var(--x-start) + var(--drift)), calc(-1 * var(--travel)), 0)
+          scale(calc(var(--scale) + .15));
+        opacity: 0;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .lenochka-wrap { min-height: 58vh; }
+      .floating-heart { font-size: 16px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .floating-heart {
+        animation: none !important;
+        opacity: .26;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <nav>
+      <a href="./index.html">Home</a>
+      <a href="./about.html">About</a>
+      <a href="./projects.html">Projects</a>
+      <a href="./games.html">Games</a>
+      <a href="./clickable-clouds.html">Clouds</a>
+      <a href="./vizuplayer.html">VizuPlayer</a>
+      <a class="active" href="./for-lenochka.html">FOR LENOCHKA</a>
+      <a href="./notes.html">Notes</a>
+    </nav>
+
+    <section class="card lenochka-wrap" aria-label="Romantic block for Lenochka">
+      <div class="hearts-layer" id="heartsLayer" aria-hidden="true"></div>
+
+      <div class="lenochka-content">
+        <article class="lenochka-love">
+          <h1>FOR LENOCHKA</h1>
+          <p>Леночка, ты делаешь этот мир теплее — спасибо за свет, нежность и улыбку каждый день 💖</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const layer = document.getElementById('heartsLayer');
+      if (!layer) return;
+
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduced) return;
+
+      const hearts = ['❤', '💗', '💖', '💕'];
+      const baseCount = window.innerWidth < 640 ? 12 : 20;
+      let poolSize = 0;
+
+      function spawnHeart() {
+        const heart = document.createElement('span');
+        heart.className = 'floating-heart';
+        heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+
+        const xStart = Math.random() * window.innerWidth;
+        const drift = (Math.random() * 120 - 60).toFixed(0) + 'px';
+        const travel = (window.innerHeight * (0.65 + Math.random() * 0.45)).toFixed(0) + 'px';
+        const scale = (0.75 + Math.random() * 0.8).toFixed(2);
+        const duration = (5.5 + Math.random() * 4).toFixed(2) + 's';
+        const delay = (Math.random() * 1.2).toFixed(2) + 's';
+
+        heart.style.setProperty('--x-start', xStart + 'px');
+        heart.style.setProperty('--drift', drift);
+        heart.style.setProperty('--travel', travel);
+        heart.style.setProperty('--scale', scale);
+        heart.style.animationDuration = duration;
+        heart.style.animationDelay = delay;
+
+        layer.appendChild(heart);
+        poolSize += 1;
+
+        heart.addEventListener('animationend', function () {
+          heart.remove();
+          poolSize -= 1;
+        }, { once: true });
+      }
+
+      for (let i = 0; i < baseCount; i++) {
+        setTimeout(spawnHeart, i * 220);
+      }
+
+      setInterval(function () {
+        const maxHearts = window.innerWidth < 640 ? 10 : 18;
+        if (poolSize < maxHearts) {
+          spawnHeart();
+        }
+      }, 520);
+    })();
+  </script>
+</body>
+</html>
