@@ -1,9 +1,12 @@
 (function () {
   const randomBtn = document.getElementById('seasonWeekRandomBtn');
   const todayBtn = document.getElementById('seasonWeekTodayBtn');
+  const saveCardBtn = document.getElementById('seasonCardSaveBtn');
+  const saveCardStatus = document.getElementById('seasonCardStatus');
   const output = document.getElementById('seasonWeekOutput');
+  const wrap = document.getElementById('lenochkaWrap');
 
-  if (!randomBtn || !todayBtn || !output) return;
+  if (!randomBtn || !todayBtn || !output || !wrap) return;
 
   const seasonalNotes = [
     { range: '4–8 февраля', start: [2, 4], end: [2, 8], season: '東風解凍 (Харукадзэ коори о току) — Восточные ветры растапливают лёд', text: 'Первое дыхание весны: лёд слабеет, в воздухе появляется мягкое тепло.' },
@@ -86,6 +89,41 @@
     'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
   ];
 
+  let currentNote = null;
+
+  const backdropThemes = [
+    {
+      colors: ['#20172f', '#25385f', '#8b5cf6'],
+      glow1: 'rgba(244, 114, 182, .42)',
+      glow2: 'rgba(129, 140, 248, .40)'
+    },
+    {
+      colors: ['#251735', '#4c1d65', '#a855f7'],
+      glow1: 'rgba(251, 113, 133, .4)',
+      glow2: 'rgba(192, 132, 252, .42)'
+    },
+    {
+      colors: ['#1b2a3f', '#1f4d56', '#22c55e'],
+      glow1: 'rgba(134, 239, 172, .38)',
+      glow2: 'rgba(56, 189, 248, .36)'
+    },
+    {
+      colors: ['#2f1e34', '#5a2f4e', '#f97316'],
+      glow1: 'rgba(252, 165, 165, .4)',
+      glow2: 'rgba(251, 191, 36, .34)'
+    },
+    {
+      colors: ['#1a223f', '#2f325f', '#0ea5e9'],
+      glow1: 'rgba(125, 211, 252, .42)',
+      glow2: 'rgba(165, 180, 252, .38)'
+    },
+    {
+      colors: ['#211a34', '#2f2750', '#6366f1'],
+      glow1: 'rgba(196, 181, 253, .40)',
+      glow2: 'rgba(244, 114, 182, .30)'
+    }
+  ];
+
   function dayOfYear(month, day) {
     let total = day;
     for (let m = 1; m < month; m += 1) total += monthLengths[m - 1];
@@ -111,11 +149,33 @@
     return `${date.getDate()} ${monthNames[date.getMonth()]}`;
   }
 
+  function getThemeForNote(note) {
+    if (!note) return backdropThemes[0];
+    const idx = seasonalNotes.indexOf(note);
+    return backdropThemes[Math.abs(idx) % backdropThemes.length];
+  }
+
+  function applySeasonBackdrop(note) {
+    const theme = getThemeForNote(note);
+    wrap.style.background = `radial-gradient(circle at 18% 22%, ${theme.glow1.replace('.4', '.24')} 0%, transparent 52%), linear-gradient(135deg, ${theme.colors[0]} 0%, ${theme.colors[1]} 52%, ${theme.colors[2]} 100%)`;
+    wrap.style.setProperty('--season-glow-1', theme.glow1);
+    wrap.style.setProperty('--season-glow-2', theme.glow2);
+
+    wrap.classList.remove('season-shift');
+    window.requestAnimationFrame(function () {
+      wrap.classList.add('season-shift');
+    });
+  }
+
   function renderNote(note, titlePrefix) {
     if (!note) {
+      currentNote = null;
       output.textContent = 'Не удалось подобрать неделю сезона для этой даты.';
       return;
     }
+
+    currentNote = note;
+    applySeasonBackdrop(note);
 
     output.innerHTML = `<strong>${titlePrefix}</strong>\n` +
       `<strong>${note.range}</strong>\n` +
@@ -123,14 +183,123 @@
       `${note.text}`;
   }
 
+  function wrappedText(ctx, text, x, y, maxWidth, lineHeight) {
+    const words = text.split(' ');
+    let line = '';
+
+    for (let i = 0; i < words.length; i += 1) {
+      const testLine = line ? `${line} ${words[i]}` : words[i];
+      if (ctx.measureText(testLine).width > maxWidth && line) {
+        ctx.fillText(line, x, y);
+        y += lineHeight;
+        line = words[i];
+      } else {
+        line = testLine;
+      }
+    }
+
+    if (line) {
+      ctx.fillText(line, x, y);
+      y += lineHeight;
+    }
+
+    return y;
+  }
+
+  function saveSeasonCard() {
+    if (!currentNote) {
+      if (saveCardStatus) saveCardStatus.textContent = 'Сначала выбери неделю сезона.';
+      return;
+    }
+
+    const now = new Date();
+    const dateText = `${now.getDate()} ${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+    const canvas = document.createElement('canvas');
+    canvas.width = 1400;
+    canvas.height = 920;
+    const ctx = canvas.getContext('2d');
+    const theme = getThemeForNote(currentNote);
+
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, theme.colors[0]);
+    gradient.addColorStop(0.55, theme.colors[1]);
+    gradient.addColorStop(1, theme.colors[2]);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.globalAlpha = 0.26;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.ellipse(250, 190, 270, 150, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(1140, 760, 290, 180, 0.26, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    const cardX = 92;
+    const cardY = 88;
+    const cardW = canvas.width - cardX * 2;
+    const cardH = canvas.height - cardY * 2;
+
+    ctx.fillStyle = 'rgba(255, 255, 255, .14)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, .34)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardY, cardW, cardH, 34);
+    ctx.fill();
+    ctx.stroke();
+
+    let y = cardY + 92;
+    const x = cardX + 66;
+    const maxWidth = cardW - 132;
+
+    ctx.fillStyle = 'rgba(255, 241, 248, .95)';
+    ctx.font = '600 42px "Segoe UI", "Inter", sans-serif';
+    ctx.fillText(`Дата: ${dateText}`, x, y);
+
+    y += 86;
+    ctx.font = '700 54px "Segoe UI", "Inter", sans-serif';
+    y = wrappedText(ctx, currentNote.season, x, y, maxWidth, 68);
+
+    y += 12;
+    ctx.font = '500 38px "Segoe UI", "Inter", sans-serif';
+    y = wrappedText(ctx, currentNote.text, x, y, maxWidth, 52);
+
+    ctx.font = '600 40px "Segoe UI", "Inter", sans-serif';
+    ctx.fillStyle = 'rgba(255, 228, 239, .98)';
+    ctx.fillText('Для Лены 💖', x, cardY + cardH - 72);
+
+    const safeRange = currentNote.range.replace(/\s+/g, '-').replace(/[–—]/g, '-').replace(/[^\w\-а-яё]/gi, '').toLowerCase();
+    const fileName = `moment-lena-${safeRange || 'season'}.png`;
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL('image/png');
+    link.download = fileName;
+    link.click();
+
+    if (saveCardStatus) {
+      saveCardStatus.textContent = `Карточка сохранена: ${fileName}`;
+    }
+  }
+
   randomBtn.addEventListener('click', function () {
     const randomIndex = Math.floor(Math.random() * seasonalNotes.length);
     renderNote(seasonalNotes[randomIndex], 'Случайный выбор:');
+    if (saveCardStatus) saveCardStatus.textContent = 'Можно сохранить этот момент в PNG.';
   });
 
   todayBtn.addEventListener('click', function () {
     const now = new Date();
     const note = getSeasonByMonthDay(now.getMonth() + 1, now.getDate());
     renderNote(note, `Сегодня (${formatDate(now)}):`);
+    if (saveCardStatus) saveCardStatus.textContent = 'Можно сохранить этот момент в PNG.';
   });
+
+  if (saveCardBtn) {
+    saveCardBtn.addEventListener('click', saveSeasonCard);
+  }
+
+  const now = new Date();
+  renderNote(getSeasonByMonthDay(now.getMonth() + 1, now.getDate()), `Сегодня (${formatDate(now)}):`);
+  if (saveCardStatus) saveCardStatus.textContent = 'Можно сохранить этот момент в PNG.';
 })();

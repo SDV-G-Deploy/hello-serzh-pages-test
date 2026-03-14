@@ -11,6 +11,50 @@
       overflow: hidden;
       isolation: isolate;
       min-height: clamp(360px, 70vh, 620px);
+      background: radial-gradient(circle at 20% 20%, rgba(236, 72, 153, .2), transparent 55%),
+        linear-gradient(140deg, #1f1630 0%, #1b1b35 45%, #18243f 100%);
+      transition: background 520ms ease;
+    }
+
+    .season-backdrop {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 80% 20%, rgba(251, 191, 36, .18), transparent 48%),
+        radial-gradient(circle at 15% 78%, rgba(129, 140, 248, .22), transparent 52%);
+      opacity: .95;
+      transition: opacity 420ms ease, transform 620ms ease;
+    }
+
+    .season-backdrop::before,
+    .season-backdrop::after {
+      content: '';
+      position: absolute;
+      inset: -14%;
+      border-radius: 50%;
+      filter: blur(48px);
+      opacity: .45;
+      transform: translate3d(0, 0, 0);
+      transition: transform 620ms ease, opacity 420ms ease;
+    }
+
+    .season-backdrop::before {
+      background: radial-gradient(circle, var(--season-glow-1, rgba(244, 114, 182, .35)) 0%, transparent 62%);
+      transform: translate(-18%, -12%);
+    }
+
+    .season-backdrop::after {
+      background: radial-gradient(circle, var(--season-glow-2, rgba(129, 140, 248, .35)) 0%, transparent 65%);
+      transform: translate(14%, 10%);
+    }
+
+    .lenochka-wrap.season-shift .season-backdrop::before {
+      transform: translate(-12%, -18%);
+    }
+
+    .lenochka-wrap.season-shift .season-backdrop::after {
+      transform: translate(18%, 14%);
     }
 
     .lenochka-content {
@@ -149,6 +193,45 @@
       gap: 10px;
     }
 
+    .season-export-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 2px;
+    }
+
+    .season-export-btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: clamp(14px, 2.1vw, 16px);
+      font-weight: 600;
+      color: #231a2c;
+      background: linear-gradient(135deg, #fbcfe8, #fde68a);
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+      box-shadow: 0 8px 16px rgba(251, 113, 133, .28);
+    }
+
+    .season-export-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.03);
+    }
+
+    .season-export-btn:focus-visible {
+      outline: 2px solid #fce7f3;
+      outline-offset: 2px;
+    }
+
+    .season-export-status {
+      margin: 0;
+      font-size: 13px;
+      color: rgba(255, 233, 243, .86);
+      text-align: center;
+    }
+
     .season-week-btn {
       border: 0;
       border-radius: 12px;
@@ -224,6 +307,12 @@
         grid-template-columns: 1fr;
         text-align: center;
       }
+      .season-export-btn {
+        width: 100%;
+      }
+      .season-export-status {
+        width: 100%;
+      }
       .floating-heart { font-size: 16px; }
     }
 
@@ -251,7 +340,8 @@
       <a href="./notes.html">Notes</a>
     </nav>
 
-    <section class="card lenochka-wrap" aria-label="Romantic block for Lenochka">
+    <section class="card lenochka-wrap" id="lenochkaWrap" aria-label="Romantic block for Lenochka">
+      <div class="season-backdrop" id="seasonBackdrop" aria-hidden="true"></div>
       <div class="hearts-layer" id="heartsLayer" aria-hidden="true"></div>
 
       <div class="lenochka-content">
@@ -273,6 +363,10 @@
             <div class="season-week-actions">
               <button class="season-week-btn" id="seasonWeekRandomBtn" type="button">Случайная неделя сезона</button>
               <button class="season-week-btn" id="seasonWeekTodayBtn" type="button">Неделя сезона на сегодня</button>
+            </div>
+            <div class="season-export-row">
+              <button class="season-export-btn" id="seasonCardSaveBtn" type="button">Сохранить момент (PNG)</button>
+              <p class="season-export-status" id="seasonCardStatus" aria-live="polite"></p>
             </div>
             <p class="season-week-output" id="seasonWeekOutput" aria-live="polite">Нажми кнопку, чтобы увидеть описание недели сезона.</p>
             <p class="season-week-source">Источник: <a href="https://www.nippon.com/ru/features/h00124/" target="_blank" rel="noopener noreferrer">nippon.com/ru/features/h00124</a></p>
@@ -477,6 +571,4 @@
     })();
   </script>
 </body>
-</html>
->
 </html>
