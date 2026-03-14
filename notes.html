@@ -13,9 +13,8 @@
       <a href="./about.html">About</a>
       <a href="./projects.html">Projects</a>
       <a href="./games.html">Games</a>
-      <a href="./clickable-clouds.html">Clouds</a>
-            <a href="./for-lenochka.html">FOR LENOCHKA</a>
-<a class="active" href="./notes.html">Notes</a>
+      <a href="./for-lenochka.html">FOR LENOCHKA</a>
+      <a class="active" href="./notes.html">Notes</a>
     </nav>
 
     <section class="card notes-shell">
@@ -23,16 +22,16 @@
 
       <section class="notes-block" aria-labelledby="timelineTitle">
         <div class="notes-block-head">
-          <h2 id="timelineTitle">Day-by-day timeline</h2>
-          <p>Лента прогресса по дням: контекст, действия, результат.</p>
+          <h2 id="timelineTitle">Последние обновления</h2>
+          <p>Коротко и по делу: контекст, действия, итог.</p>
         </div>
         <div class="notes-timeline" id="notesTimeline"></div>
       </section>
 
       <section class="notes-block" aria-labelledby="insightsTitle">
         <div class="notes-block-head">
-          <h2 id="insightsTitle">Insights</h2>
-          <p>Короткие выводы, чтобы усиливать то, что работает, и не повторять ошибки.</p>
+          <h2 id="insightsTitle">Инсайты и следующий фокус</h2>
+          <p>Что усиливаем, что убираем и куда двигаемся дальше.</p>
         </div>
 
         <div class="insights-grid" id="insightsGrid"></div>
@@ -74,7 +73,7 @@
     const insightSections = [
       { key: 'worked', title: 'Что сработало' },
       { key: 'failed', title: 'Что не сработало' },
-      { key: 'next', title: 'Что пробуем дальше' }
+      { key: 'next', title: 'Что делаем дальше' }
     ];
 
     insightsGrid.innerHTML = insightSections.map((section) => {
