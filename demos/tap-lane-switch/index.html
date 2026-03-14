@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tap Lane Switch</title>
+  <style>
+    :root{--bg:#070b17;--card:#111936;--line:rgba(255,255,255,.14);--text:#eef2ff;--muted:#a8b4d8;--ok:#34d399;--bad:#fb7185;--acc:#38bdf8;--acc2:#818cf8}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--text);background:radial-gradient(800px 420px at 50% -20%,#23366d,var(--bg))}
+    .wrap{max-width:440px;margin:0 auto;padding:12px}
+    .card{background:rgba(17,25,54,.92);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+    h1{margin:0 0 4px;font-size:22px}
+    .sub{margin:0;color:var(--muted);font-size:13px}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .stat{background:#0c1430;border-radius:10px;padding:8px;font-size:12px;text-align:center}.stat b{display:block;font-size:16px;margin-top:3px}
+    .arena{position:relative;height:360px;border-radius:12px;background:linear-gradient(180deg,#0b1227,#070b17);overflow:hidden;border:1px solid rgba(255,255,255,.1)}
+    .lane{position:absolute;top:0;bottom:0;width:33.333%}
+    .lane:nth-child(1){left:0}.lane:nth-child(2){left:33.333%}.lane:nth-child(3){left:66.666%}
+    .lane + .lane{border-left:1px dashed rgba(255,255,255,.15)}
+    .player{position:absolute;bottom:18px;width:20%;height:16px;border-radius:999px;background:linear-gradient(135deg,var(--acc),var(--acc2));left:6.6%;transition:left .1s ease}
+    .ob{position:absolute;top:-24px;width:20%;height:18px;border-radius:6px;background:linear-gradient(135deg,#fda4af,#fb7185)}
+    .coin{position:absolute;top:-24px;width:16%;height:16px;border-radius:50%;background:linear-gradient(135deg,#fef08a,#f59e0b)}
+    .controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+    button{appearance:none;border:0;border-radius:10px;padding:12px;font-size:15px;font-weight:800;color:#0a1122}
+    #switch{background:linear-gradient(135deg,var(--acc),var(--acc2))}
+    #start{background:linear-gradient(135deg,#93c5fd,var(--ok))}
+    #msg{margin:8px 0 0;color:var(--muted);font-weight:700;min-height:20px}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card"><h1>Tap Lane Switch</h1><p class="sub">One-thumb ран: переключай дорожки, уворачивайся и собирай монеты 45 секунд.</p></div>
+  <div class="card stats">
+    <div class="stat">⏱<b id="time">45</b></div>
+    <div class="stat">🏁<b id="score">0</b></div>
+    <div class="stat">🔥<b id="combo">0</b></div>
+    <div class="stat">🏆<b id="best">0</b></div>
+  </div>
+  <div class="card">
+    <div class="arena" id="arena">
+      <div class="lane"></div><div class="lane"></div><div class="lane"></div>
+      <div class="player" id="player"></div>
+    </div>
+    <div class="controls"><button id="switch">Сменить lane</button><button id="start">Старт</button></div>
+    <p id="msg">Жми «Старт», потом тапай «Сменить lane» в нужный момент.</p>
+  </div>
+</div>
+<script>
+(() => {
+  const el=(id)=>document.getElementById(id);
+  const ui={time:el('time'),score:el('score'),combo:el('combo'),best:el('best'),arena:el('arena'),player:el('player'),msg:el('msg')};
+  const S={run:false,t:45,score:0,combo:0,lane:0,speed:2.8,spawnTick:0,items:[],raf:0,iv:0};
+  const laneLeft=['6.6%','39.9%','73.2%'];
+  const best=()=>+(localStorage.getItem('tapLaneSwitchBest')||0);
+  const setBest=(v)=>localStorage.setItem('tapLaneSwitchBest',String(v));
+
+  function hud(){ui.time.textContent=S.t;ui.score.textContent=S.score;ui.combo.textContent=S.combo;ui.best.textContent=best();ui.player.style.left=laneLeft[S.lane];}
+  function note(text,color){ui.msg.textContent=text;ui.msg.style.color=color||'#a8b4d8';}
+  function clearItems(){S.items.forEach(i=>i.el.remove());S.items=[];}
+
+  function spawn(kind){
+    const lane=Math.floor(Math.random()*3);
+    const n=document.createElement('div');
+    n.className=kind==='coin'?'coin':'ob';
+    n.style.left=laneLeft[lane];
+    ui.arena.appendChild(n);
+    S.items.push({el:n,lane,y:-24,kind,hit:false});
+  }
+
+  function switchLane(){ if(!S.run) return; S.lane=(S.lane+1)%3; hud(); }
+
+  function endRun(){
+    cancelAnimationFrame(S.raf); clearInterval(S.iv); S.run=false;
+    if(S.score>best()) setBest(S.score);
+    hud(); note(`Финиш: ${S.score}. Попробуй улучшить траекторию lane-switch.`,'#34d399');
+  }
+
+  function frame(){
+    if(!S.run) return;
+    S.spawnTick += 1;
+    if(S.spawnTick%38===0) spawn(Math.random()<0.32?'coin':'ob');
+
+    const H=ui.arena.clientHeight;
+    for(const item of S.items){
+      item.y += S.speed;
+      item.el.style.transform=`translateY(${item.y}px)`;
+      const nearPlayer = item.y > H-56 && item.y < H-12;
+      if(nearPlayer && !item.hit && item.lane===S.lane){
+        item.hit=true;
+        if(item.kind==='coin'){ S.score += 2; S.combo += 1; note('COIN +2','#f59e0b'); }
+        else { S.combo=0; S.score=Math.max(0,S.score-1); note('HIT -1','#fb7185'); }
+      }
+      if(item.y > H+24 && !item.hit && item.kind==='ob' && item.lane!==S.lane){
+        S.score += 1; S.combo += 1;
+      }
+    }
+
+    S.items=S.items.filter(i=>{ if(i.y>H+30){i.el.remove(); return false;} return true; });
+    if(S.combo>0 && S.combo%7===0) S.score += 1;
+    S.speed = Math.min(4.2, 2.8 + (45-S.t)*0.03);
+    hud();
+    S.raf=requestAnimationFrame(frame);
+  }
+
+  function start(){
+    clearItems(); cancelAnimationFrame(S.raf); clearInterval(S.iv);
+    S.run=true;S.t=45;S.score=0;S.combo=0;S.lane=0;S.speed=2.8;S.spawnTick=0;S.items=[];
+    hud(); note('Go! Уклоняйся и собирай монеты.');
+    S.iv=setInterval(()=>{S.t-=1;hud(); if(S.t<=0) endRun();},1000);
+    S.raf=requestAnimationFrame(frame);
+  }
+
+  el('switch').addEventListener('click',switchLane);
+  el('start').addEventListener('click',start);
+  hud();
+})();
+</script>
+</body>
+</html>

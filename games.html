@@ -43,6 +43,16 @@
       grid-template-columns: 1fr;
       margin-top: 14px;
     }
+
+    .week-top3 {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: rgba(255,255,255,.03);
+    }
+    .week-top3 h2 { margin: 0 0 8px; font-size: 18px; }
+    .week-top3 ol { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--muted); }
     @media (min-width: 760px) {
       .games-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
     }
@@ -147,6 +157,15 @@
         <button class="filter-btn" data-filter="polish" type="button">Polish</button>
       </div>
 
+      <section class="week-top3" aria-labelledby="top3Title">
+        <h2 id="top3Title">Top 3 to improve this week</h2>
+        <ol>
+          <li>Сделать короткий in-game onboarding (1 экран до старта) для всех playable-демо, чтобы уменьшить первый отвал на мобильных.</li>
+          <li>Добавить единый блок «retry + share score» после финиша и проверить, где проседает вовлечение после первой попытки.</li>
+          <li>Вынести общие UI-паттерны (таймер, счет, best, кнопка restart) в минимальный reusable шаблон для ускорения новых демо.</li>
+        </ol>
+      </section>
+
       <div id="gamesGrid" class="games-grid"></div>
       <div id="gamesEmpty" class="game-empty">По этому фильтру пока нет игр.</div>
     </section>
@@ -233,6 +252,15 @@
         status: 'playable'
       },
       {
+        title: 'Tap Lane Switch',
+        subtitle: 'One-Thumb Lane Runner',
+        shortDescription: '45 секунд lane-switch геймплея: уклоняйся от блоков, собирай монеты и держи combo.',
+        playUrl: './demos/tap-lane-switch/index.html',
+        repoUrl: '',
+        tags: ['mobile-first', 'one-thumb', 'runner'],
+        status: 'playable'
+      },
+      {
         title: 'Signal Dash',
         subtitle: 'Fast Dodge & Collect',
         shortDescription: '30-секундный рывок: уклоняйся, собирай сигналы и улучшай best run.',
@@ -312,6 +340,8 @@
       const repoBtn = game.repoUrl
         ? `<a class="action-btn secondary" href="${game.repoUrl}" target="_blank" rel="noreferrer">Репозиторий</a>`
         : '';
+      const externalPlay = /^https?:\/\//.test(game.playUrl || '');
+      const playAttrs = externalPlay ? 'target="_blank" rel="noreferrer"' : '';
 
       return `
         <article class="game-card" data-status="${game.status}">
@@ -325,7 +355,7 @@
           <p class="game-desc">${game.shortDescription || ''}</p>
           <div class="game-tags">${tags}</div>
           <div class="game-actions">
-            <a class="action-btn primary" href="${game.playUrl}" target="_blank" rel="noreferrer">Играть</a>
+            <a class="action-btn primary" href="${game.playUrl}" ${playAttrs}>Играть</a>
             ${repoBtn}
           </div>
         </article>
