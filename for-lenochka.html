@@ -118,6 +118,71 @@
       transform: translateY(10px);
     }
 
+    .season-week-block {
+      grid-column: 1 / -1;
+      border: 1px solid rgba(255, 255, 255, .2);
+      border-radius: 14px;
+      padding: clamp(14px, 2.6vw, 20px);
+      background: rgba(15, 23, 42, .28);
+      display: grid;
+      gap: 10px;
+    }
+
+    .season-week-block h2 {
+      margin: 0;
+      text-align: center;
+      color: #fde7f3;
+      font-size: clamp(16px, 2.3vw, 20px);
+    }
+
+    .season-week-hint {
+      margin: 0;
+      font-size: 13px;
+      color: rgba(255, 230, 240, .82);
+      text-align: center;
+    }
+
+    .season-week-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .season-week-btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: clamp(14px, 2.1vw, 16px);
+      font-weight: 600;
+      color: #1e1b2e;
+      background: linear-gradient(135deg, #ddd6fe, #fbcfe8);
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+      box-shadow: 0 8px 18px rgba(129, 140, 248, .28);
+    }
+
+    .season-week-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.03);
+    }
+
+    .season-week-btn:focus-visible {
+      outline: 2px solid #fce7f3;
+      outline-offset: 2px;
+    }
+
+    .season-week-output {
+      min-height: 92px;
+      margin: 0;
+      padding: 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .1);
+      color: #ffe6f0;
+      line-height: 1.45;
+      white-space: pre-line;
+    }
+
     .hearts-layer {
       position: absolute;
       inset: 0;
@@ -201,10 +266,22 @@
             <button class="message-btn" id="messageBtn" type="button">Сгенерировать послание 💌</button>
             <p class="message-output" id="messageOutput" aria-live="polite">Нажми на кнопку — и появится тёплое послание ✨</p>
           </section>
+
+          <section class="season-week-block" aria-labelledby="seasonWeekTitle">
+            <h2 id="seasonWeekTitle">Нагори: неделя сезона</h2>
+            <p class="season-week-hint">Используются краткие нейтральные описания в стиле «неделя сезона» (не дословные цитаты из книги).</p>
+            <div class="season-week-actions">
+              <button class="season-week-btn" id="seasonWeekRandomBtn" type="button">Случайная неделя сезона</button>
+              <button class="season-week-btn" id="seasonWeekTodayBtn" type="button">Неделя сезона на сегодня</button>
+            </div>
+            <p class="season-week-output" id="seasonWeekOutput" aria-live="polite">Нажми кнопку, чтобы увидеть описание недели сезона.</p>
+          </section>
         </article>
       </div>
     </section>
   </main>
+
+  <script src="./for-lenochka-season-weeks.js" defer></script>
 
   <script>
     (function () {
