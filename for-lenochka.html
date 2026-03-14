@@ -413,6 +413,70 @@
       box-shadow: 0 8px 18px rgba(167, 139, 250, .24);
     }
 
+    .ritual-btn.subtle {
+      background: linear-gradient(135deg, #ddd6fe, #fbcfe8);
+      box-shadow: 0 6px 14px rgba(129, 140, 248, .2);
+    }
+
+    .ritual-btn.is-favorite {
+      background: linear-gradient(135deg, #fde68a, #f9a8d4);
+      box-shadow: 0 8px 18px rgba(251, 191, 36, .26);
+    }
+
+    .ritual-favorites-panel {
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, .18);
+      background: rgba(255, 255, 255, .07);
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .ritual-favorites-panel[hidden] {
+      display: none;
+    }
+
+    .ritual-favorites-title {
+      margin: 0;
+      font-size: 13px;
+      color: rgba(255, 230, 240, .86);
+      text-align: center;
+    }
+
+    .ritual-favorites-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 6px;
+      max-height: 180px;
+      overflow: auto;
+    }
+
+    .ritual-favorite-item {
+      width: 100%;
+      text-align: left;
+      border: 1px solid rgba(255, 255, 255, .22);
+      border-radius: 10px;
+      background: rgba(15, 23, 42, .34);
+      color: #ffe6f0;
+      padding: 8px 10px;
+      font-size: 14px;
+      line-height: 1.35;
+      cursor: pointer;
+    }
+
+    .ritual-favorite-item:hover {
+      background: rgba(15, 23, 42, .46);
+    }
+
+    .ritual-favorites-empty {
+      margin: 0;
+      text-align: center;
+      font-size: 13px;
+      color: rgba(255, 230, 240, .76);
+    }
+
     .ritual-btn:hover {
       transform: translateY(-1px);
       filter: brightness(1.03);
@@ -577,8 +641,15 @@
             <p class="ritual-hint">Короткое действие под ритм текущего малого сезона.</p>
             <div class="ritual-actions">
               <button class="ritual-btn" id="ritualRefreshBtn" type="button">Новый ритуал</button>
+              <button class="ritual-btn subtle" id="ritualFavoriteToggleBtn" type="button" aria-pressed="false">☆ В любимые</button>
+              <button class="ritual-btn subtle" id="ritualFavoritesOpenBtn" type="button" aria-expanded="false" aria-controls="ritualFavoritesPanel">Любимые ритуалы</button>
             </div>
             <p class="ritual-output" id="ritualOutput" aria-live="polite">Выбери неделю сезона — и здесь появится ритуал.</p>
+            <section class="ritual-favorites-panel" id="ritualFavoritesPanel" hidden>
+              <p class="ritual-favorites-title">Нажми на ритуал, чтобы показать его снова в блоке выше.</p>
+              <ul class="ritual-favorites-list" id="ritualFavoritesList"></ul>
+              <p class="ritual-favorites-empty" id="ritualFavoritesEmpty">Пока нет любимых ритуалов.</p>
+            </section>
           </section>
         </article>
       </div>

@@ -6,6 +6,11 @@
   const output = document.getElementById('seasonWeekOutput');
   const ritualOutput = document.getElementById('ritualOutput');
   const ritualRefreshBtn = document.getElementById('ritualRefreshBtn');
+  const ritualFavoriteToggleBtn = document.getElementById('ritualFavoriteToggleBtn');
+  const ritualFavoritesOpenBtn = document.getElementById('ritualFavoritesOpenBtn');
+  const ritualFavoritesPanel = document.getElementById('ritualFavoritesPanel');
+  const ritualFavoritesList = document.getElementById('ritualFavoritesList');
+  const ritualFavoritesEmpty = document.getElementById('ritualFavoritesEmpty');
   const wrap = document.getElementById('lenochkaWrap');
 
   if (!randomBtn || !todayBtn || !output || !wrap) return;
@@ -95,6 +100,7 @@
   ];
 
   const RITUALS_JSON_PATH = 'assets/japanese_72_microseasons_unique_rituals.json';
+  const FAVORITE_RITUALS_STORAGE_KEY = 'lenochka.favoriteRituals.v1';
   let ritualsBySekkiExternal = null;
 
   const monthLengths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -105,7 +111,11 @@
 
   let currentNote = null;
   let currentRitualPool = [];
+  let currentRitualText = '';
   let lastRitualIndex = -1;
+  let favoriteRituals = [];
+  let memoryFavoriteRituals = [];
+  let canUseLocalStorage = false;
 
   const backdropThemes = [
     {
@@ -196,6 +206,128 @@
     return fallbackRitualsSmall.filter(Boolean);
   }
 
+  function normalizeRitualText(text) {
+    return typeof text === 'string' ? text.trim() : '';
+  }
+
+  function uniqueRituals(list) {
+    const unique = [];
+    const seen = new Set();
+
+    (Array.isArray(list) ? list : []).forEach(function (item) {
+      const normalized = normalizeRitualText(item);
+      if (!normalized || seen.has(normalized)) return;
+      seen.add(normalized);
+      unique.push(normalized);
+    });
+
+    return unique;
+  }
+
+  function detectLocalStorage() {
+    try {
+      const testKey = '__lenochka_storage_probe__';
+      window.localStorage.setItem(testKey, '1');
+      window.localStorage.removeItem(testKey);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function loadFavoriteRituals() {
+    if (!canUseLocalStorage) {
+      favoriteRituals = uniqueRituals(memoryFavoriteRituals);
+      return;
+    }
+
+    try {
+      const raw = window.localStorage.getItem(FAVORITE_RITUALS_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      favoriteRituals = uniqueRituals(parsed);
+    } catch (error) {
+      console.warn('Favorite rituals storage read failed, switching to in-memory mode.', error);
+      canUseLocalStorage = false;
+      favoriteRituals = uniqueRituals(memoryFavoriteRituals);
+    }
+  }
+
+  function persistFavoriteRituals() {
+    if (!canUseLocalStorage) {
+      memoryFavoriteRituals = uniqueRituals(favoriteRituals);
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(FAVORITE_RITUALS_STORAGE_KEY, JSON.stringify(uniqueRituals(favoriteRituals)));
+    } catch (error) {
+      console.warn('Favorite rituals storage write failed, switching to in-memory mode.', error);
+      canUseLocalStorage = false;
+      memoryFavoriteRituals = uniqueRituals(favoriteRituals);
+    }
+  }
+
+  function updateFavoriteToggleUi() {
+    if (!ritualFavoriteToggleBtn) return;
+
+    const current = normalizeRitualText(currentRitualText);
+    const isFavorite = Boolean(current) && favoriteRituals.includes(current);
+
+    ritualFavoriteToggleBtn.classList.toggle('is-favorite', isFavorite);
+    ritualFavoriteToggleBtn.setAttribute('aria-pressed', String(isFavorite));
+    ritualFavoriteToggleBtn.textContent = isFavorite ? '★ В любимых' : '☆ В любимые';
+    ritualFavoriteToggleBtn.disabled = !current;
+  }
+
+  function renderFavoriteRitualsList() {
+    if (!ritualFavoritesList || !ritualFavoritesEmpty) return;
+
+    ritualFavoritesList.innerHTML = '';
+
+    if (!favoriteRituals.length) {
+      ritualFavoritesEmpty.hidden = false;
+      return;
+    }
+
+    ritualFavoritesEmpty.hidden = true;
+
+    favoriteRituals.forEach(function (ritualText) {
+      const li = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'ritual-favorite-item';
+      button.textContent = ritualText;
+      button.addEventListener('click', function () {
+        currentRitualText = ritualText;
+        if (ritualOutput) ritualOutput.textContent = ritualText;
+        updateFavoriteToggleUi();
+      });
+      li.appendChild(button);
+      ritualFavoritesList.appendChild(li);
+    });
+  }
+
+  function addCurrentRitualToFavorites() {
+    const current = normalizeRitualText(currentRitualText);
+    if (!current) return;
+
+    if (!favoriteRituals.includes(current)) {
+      favoriteRituals.push(current);
+      favoriteRituals = uniqueRituals(favoriteRituals);
+      persistFavoriteRituals();
+      renderFavoriteRitualsList();
+    }
+
+    updateFavoriteToggleUi();
+  }
+
+  function toggleFavoritesPanel() {
+    if (!ritualFavoritesPanel || !ritualFavoritesOpenBtn) return;
+    const nextState = ritualFavoritesPanel.hidden;
+    ritualFavoritesPanel.hidden = !nextState;
+    ritualFavoritesOpenBtn.setAttribute('aria-expanded', String(nextState));
+  }
+
   async function loadExternalRituals() {
     try {
       const response = await fetch(RITUALS_JSON_PATH, { cache: 'no-store' });
@@ -240,14 +372,18 @@
     if (!ritualOutput) return;
 
     if (!Array.isArray(pool) || pool.length === 0) {
+      currentRitualText = '';
       ritualOutput.textContent = 'Пока нет ритуала для этой недели. Нажми «Новый ритуал» позже.';
       lastRitualIndex = -1;
+      updateFavoriteToggleUi();
       return;
     }
 
     const ritualIndex = randomDifferentIndex(pool.length, lastRitualIndex);
     lastRitualIndex = ritualIndex;
-    ritualOutput.textContent = pool[ritualIndex];
+    currentRitualText = pool[ritualIndex];
+    ritualOutput.textContent = currentRitualText;
+    updateFavoriteToggleUi();
   }
 
   function updateRitualForNote(note) {
@@ -401,6 +537,19 @@
       renderRitualByPool(currentRitualPool);
     });
   }
+
+  if (ritualFavoriteToggleBtn) {
+    ritualFavoriteToggleBtn.addEventListener('click', addCurrentRitualToFavorites);
+  }
+
+  if (ritualFavoritesOpenBtn) {
+    ritualFavoritesOpenBtn.addEventListener('click', toggleFavoritesPanel);
+  }
+
+  canUseLocalStorage = detectLocalStorage();
+  loadFavoriteRituals();
+  renderFavoriteRitualsList();
+  updateFavoriteToggleUi();
 
   const now = new Date();
   renderNote(getSeasonByMonthDay(now.getMonth() + 1, now.getDate()), `Сегодня (${formatDate(now)}):`);
