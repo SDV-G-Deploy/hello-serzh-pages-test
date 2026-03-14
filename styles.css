@@ -14,7 +14,7 @@ body{
 }
 .container{width:min(1000px,92vw); margin:0 auto; padding:28px 0 48px}
 nav{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px}
-nav a{color:white; text-decoration:none; border:1px solid var(--line); padding:8px 12px; border-radius:10px; background:rgba(255,255,255,.05); transition:background .16s ease, transform .16s ease, border-color .16s ease}
+nav a{color:white; text-decoration:none; border:1px solid var(--line); padding:8px 12px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; background:rgba(255,255,255,.05); transition:background .16s ease, transform .16s ease, border-color .16s ease}
 nav a:hover{background:rgba(255,255,255,.12); transform:translateY(-1px)}
 nav a.active{background:linear-gradient(135deg,var(--accent),var(--accent2)); border-color:transparent}
 .card{border:1px solid var(--line); background:var(--card); border-radius:18px; padding:22px; box-shadow:0 14px 32px rgba(0,0,0,.28)}
@@ -49,6 +49,8 @@ small{color:var(--muted)}
   display: flex;
   flex-direction: column;
   gap: 10px;
+  content-visibility: auto;
+  contain-intrinsic-size: 220px;
   transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
 }
 
@@ -164,6 +166,8 @@ small{color:var(--muted)}
   display: flex;
   flex-direction: column;
   gap: 10px;
+  content-visibility: auto;
+  contain-intrinsic-size: 240px;
 }
 
 .timeline-meta {
