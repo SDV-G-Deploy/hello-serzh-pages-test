@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Thumb Zipline — MVP</title>
+  <style>
+    :root {
+      --bg: #070b14;
+      --panel: #121a2a;
+      --line: #293548;
+      --text: #e8eef9;
+      --muted: #98a7c0;
+      --accent: #38bdf8;
+      --good: #22c55e;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(circle at 20% 0%, #0f1b33, var(--bg) 58%);
+      color: var(--text);
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 14px;
+    }
+    .app {
+      width: min(100%, 520px);
+      display: grid;
+      gap: 10px;
+    }
+    .hud {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,.04);
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      text-align: center;
+    }
+    .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .value { font-weight: 800; font-size: 20px; margin-top: 2px; }
+
+    .stage-wrap {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 14px 30px rgba(0,0,0,.35);
+      background: linear-gradient(180deg, #0e1628, #0b1321);
+    }
+    canvas { display: block; width: 100%; height: auto; touch-action: none; }
+
+    .overlay {
+      position: absolute; inset: 0;
+      display: grid; place-items: center;
+      background: rgba(7, 11, 20, .55);
+      padding: 16px;
+      text-align: center;
+    }
+    .card {
+      max-width: 320px;
+      border: 1px solid var(--line);
+      background: rgba(12, 18, 31, .92);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .card h1 { margin: 0 0 8px; font-size: 24px; }
+    .card p { margin: 0 0 10px; color: var(--muted); line-height: 1.35; font-size: 14px; }
+    .btn {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 800;
+      font-size: 14px;
+      color: white;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent), #6366f1);
+      width: 100%;
+    }
+    .hint {
+      font-size: 12px;
+      color: #c7d6ef;
+      margin-top: 8px;
+    }
+    .flash {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      font-weight: 800;
+      font-size: 12px;
+      color: #111827;
+      background: #fcd34d;
+      border-radius: 999px;
+      padding: 5px 8px;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: .14s ease;
+      pointer-events: none;
+    }
+    .flash.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hud">
+      <div><div class="label">Score</div><div class="value" id="score">0</div></div>
+      <div><div class="label">Best</div><div class="value" id="best">0</div></div>
+      <div><div class="label">Speed</div><div class="value" id="speed">1.0x</div></div>
+    </section>
+
+    <section class="stage-wrap">
+      <canvas id="game" width="390" height="680" aria-label="Thumb Zipline game canvas"></canvas>
+
+      <div id="startOverlay" class="overlay">
+        <div class="card">
+          <h1>Thumb Zipline</h1>
+          <p>Удерживай экран — поднимаешься. Отпускай — падаешь. Проходи через коридоры и лови near-miss бонусы.</p>
+          <button id="startBtn" class="btn">Старт</button>
+          <div class="hint">One-thumb mobile MVP · 30–90s runs</div>
+        </div>
+      </div>
+
+      <div id="overOverlay" class="overlay" hidden>
+        <div class="card">
+          <h1>Crash</h1>
+          <p id="resultText">Score: 0</p>
+          <button id="restartBtn" class="btn">Ещё ран</button>
+          <div class="hint">Быстрый рестарт = быстрый прогресс</div>
+        </div>
+      </div>
+
+      <div id="nearFlash" class="flash">NEAR +5</div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    const scoreEl = document.getElementById('score');
+    const bestEl = document.getElementById('best');
+    const speedEl = document.getElementById('speed');
+
+    const startOverlay = document.getElementById('startOverlay');
+    const overOverlay = document.getElementById('overOverlay');
+    const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const resultText = document.getElementById('resultText');
+    const nearFlash = document.getElementById('nearFlash');
+
+    const BEST_KEY = 'thumbZiplineBest';
+    let best = Number(localStorage.getItem(BEST_KEY) || 0);
+    bestEl.textContent = best;
+
+    const state = {
+      running: false,
+      pressing: false,
+      score: 0,
+      player: null,
+      walls: [],
+      spawnTimer: 0,
+      elapsed: 0,
+      nearCooldown: 0,
+      lastTs: 0
+    };
+
+    function reset() {
+      state.running = true;
+      state.pressing = false;
+      state.score = 0;
+      state.elapsed = 0;
+      state.spawnTimer = 0;
+      state.nearCooldown = 0;
+      state.walls = [];
+      state.player = { x: 82, y: canvas.height / 2, r: 13, vy: 0 };
+      scoreEl.textContent = '0';
+      speedEl.textContent = '1.0x';
+      overOverlay.hidden = true;
+      nearFlash.classList.remove('show');
+    }
+
+    function getRamp() {
+      const t = Math.min(90, state.elapsed);
+      return {
+        speed: 170 + t * 1.2,
+        gap: Math.max(132, 190 - t * 0.65),
+        spawnEvery: Math.max(0.92, 1.35 - t * 0.004)
+      };
+    }
+
+    function spawnWall() {
+      const { gap } = getRamp();
+      const margin = 80;
+      const gapY = margin + Math.random() * (canvas.height - margin * 2);
+      state.walls.push({ x: canvas.width + 64, w: 60, gapY, gap, scored: false, nearGiven: false });
+    }
+
+    function flashNear() {
+      nearFlash.classList.add('show');
+      setTimeout(() => nearFlash.classList.remove('show'), 280);
+      if (navigator.vibrate) navigator.vibrate(14);
+    }
+
+    function update(dt) {
+      if (!state.running) return;
+
+      state.elapsed += dt;
+      const ramp = getRamp();
+      speedEl.textContent = `${(ramp.speed / 170).toFixed(1)}x`;
+
+      state.spawnTimer += dt;
+      if (state.spawnTimer >= ramp.spawnEvery) {
+        state.spawnTimer = 0;
+        spawnWall();
+      }
+
+      const p = state.player;
+      const lift = -510;
+      const gravity = 940;
+      p.vy += (state.pressing ? lift : gravity) * dt;
+      p.vy = Math.max(-380, Math.min(520, p.vy));
+      p.y += p.vy * dt;
+
+      if (p.y - p.r <= 0 || p.y + p.r >= canvas.height) {
+        return gameOver();
+      }
+
+      for (const w of state.walls) {
+        w.x -= ramp.speed * dt;
+
+        const withinX = p.x + p.r > w.x && p.x - p.r < w.x + w.w;
+        const gapTop = w.gapY - w.gap / 2;
+        const gapBottom = w.gapY + w.gap / 2;
+
+        if (withinX) {
+          if (p.y - p.r < gapTop || p.y + p.r > gapBottom) {
+            return gameOver();
+          }
+
+          const distToTop = Math.abs((p.y - p.r) - gapTop);
+          const distToBottom = Math.abs(gapBottom - (p.y + p.r));
+          const near = Math.min(distToTop, distToBottom);
+          if (!w.nearGiven && near <= 9 && state.nearCooldown <= 0) {
+            w.nearGiven = true;
+            state.nearCooldown = 0.18;
+            state.score += 5;
+            flashNear();
+          }
+        }
+
+        if (!w.scored && w.x + w.w < p.x) {
+          w.scored = true;
+          state.score += 10;
+        }
+      }
+
+      state.walls = state.walls.filter(w => w.x + w.w > -10);
+      if (state.nearCooldown > 0) state.nearCooldown -= dt;
+
+      state.score += dt * 3.5;
+      scoreEl.textContent = Math.floor(state.score);
+    }
+
+    function drawBackground() {
+      const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      g.addColorStop(0, '#0f1b33');
+      g.addColorStop(1, '#0a1220');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const t = performance.now() * 0.00007;
+      for (let i = 0; i < 22; i++) {
+        const x = (i * 47 + t * 900) % (canvas.width + 40) - 20;
+        const y = 30 + ((i * 89) % (canvas.height - 60));
+        ctx.fillStyle = 'rgba(148,163,184,.12)';
+        ctx.fillRect(x, y, 18, 2);
+      }
+    }
+
+    function draw() {
+      drawBackground();
+
+      for (const w of state.walls) {
+        const gapTop = w.gapY - w.gap / 2;
+        const gapBottom = w.gapY + w.gap / 2;
+
+        ctx.fillStyle = '#1f2937';
+        ctx.fillRect(w.x, 0, w.w, gapTop);
+        ctx.fillRect(w.x, gapBottom, w.w, canvas.height - gapBottom);
+
+        ctx.strokeStyle = 'rgba(56,189,248,.28)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(w.x, 0, w.w, gapTop);
+        ctx.strokeRect(w.x, gapBottom, w.w, canvas.height - gapBottom);
+      }
+
+      const p = state.player;
+      if (p) {
+        ctx.beginPath();
+        ctx.fillStyle = '#38bdf8';
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.fillStyle = '#e2e8f0';
+        ctx.arc(p.x + 3, p.y - 3, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function gameOver() {
+      if (!state.running) return;
+      state.running = false;
+      const finalScore = Math.floor(state.score);
+      if (finalScore > best) {
+        best = finalScore;
+        localStorage.setItem(BEST_KEY, String(best));
+        bestEl.textContent = best;
+      }
+      resultText.textContent = `Score: ${finalScore} · Best: ${best}`;
+      overOverlay.hidden = false;
+      if (navigator.vibrate) navigator.vibrate([24, 40, 30]);
+    }
+
+    function tick(ts) {
+      if (!state.lastTs) state.lastTs = ts;
+      let dt = (ts - state.lastTs) / 1000;
+      state.lastTs = ts;
+      dt = Math.min(dt, 0.033);
+      update(dt);
+      draw();
+      requestAnimationFrame(tick);
+    }
+
+    function pressOn(e) {
+      e.preventDefault();
+      state.pressing = true;
+    }
+    function pressOff(e) {
+      e.preventDefault();
+      state.pressing = false;
+    }
+
+    canvas.addEventListener('pointerdown', pressOn);
+    window.addEventListener('pointerup', pressOff);
+    window.addEventListener('pointercancel', pressOff);
+
+    startBtn.addEventListener('click', () => {
+      reset();
+      startOverlay.hidden = true;
+    });
+
+    restartBtn.addEventListener('click', () => {
+      reset();
+    });
+
+    draw();
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

@@ -177,3 +177,20 @@ New rule:
 
 Next:
 - Добавить опциональный near-miss бонус (+feedback/haptic) и lightweight event hooks (`run_start`, `tap_hit`, `tap_miss`, `run_end`).
+
+## 2026-03-15 (daily MVP ship)
+
+- Обновлён daily digest и выбран победитель: **Thumb Zipline**.
+- Создан план: `demos/thumb-zipline/PROMPT_PLAN.md`.
+- Реализован новый playable MVP: `demos/thumb-zipline/index.html`.
+- Добавлена карточка игры в `games.html`; обновлён `ROADMAP.md`.
+
+What worked:
+- Hold/release управление остаётся самым быстрым путём к mobile-first loop.
+- Near-miss бонус (+5) + лёгкая вибра даёт понятный "ещё ран" триггер.
+
+New rule:
+- Для one-input survival MVP добавлять near-miss как базовый retention-слой уже в первой версии.
+
+Next:
+- Проверить Lane Pulse Flip с тем же каркасом HUD/restart/best, чтобы ускорить следующий daily ship.

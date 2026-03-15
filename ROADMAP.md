@@ -30,20 +30,21 @@ SLA: one daily digest run should produce one new playable MVP link.
 ## Current focus (seed)
 
 ### TODAY_MVP (candidate)
-- Idea: **Thumb Zipline**
-- Why: логичное развитие one-thumb survival после тайминговых MVP
-- Complexity: low
+- Idea: **Lane Pulse Flip**
+- Why: следующий шаг после hold/release MVP — проверить lane-switch + цветовые гейты
+- Complexity: low-medium
 - Priority: high
-- Next test (2–4h): hold/release высота + near-miss бонус + мягкий speed ramp
+- Next test (2–4h): tap lane swap + readable color cue + combo pressure
 
 ### BACKLOG
-1. Thumb Zipline (hold/release corridor survival)
-2. Lane Pulse Flip (tap lane swap + color gates)
-3. Fair Shot Arena v2 (readability + telemetry hooks)
-4. Daily Tower Seed v2 (daily modifiers)
+1. Lane Pulse Flip (tap lane swap + color gates)
+2. Fair Shot Arena v2 (readability + telemetry hooks)
+3. Daily Tower Seed v2 (daily modifiers)
+4. Tap Window Rush v2 (near-miss + telemetry hooks)
 
 ## Done log
 
+- 2026-03-15: Thumb Zipline MVP shipped in `demos/thumb-zipline/` (hold/release flight, corridor survival, near-miss bonus, speed ramp, local best)
 - 2026-03-14: Tap Window Rush MVP shipped in `demos/tap-window-rush/` (one-tap timing windows, streak multiplier, speed ramp, local best)
 - 2026-03-13: Merge Sprint 45 MVP shipped in `demos/merge-sprint-45/` (3x3 merge sprint, chain reactions, 45s pressure loop, local best)
 - 2026-03-13: Drift Dot MVP shipped in `demos/drift-dot/` (60s hold/release survival, moving gap walls, gradual ramp, local best)
