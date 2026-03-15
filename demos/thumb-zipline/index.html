@@ -62,6 +62,9 @@
       padding: 16px;
       text-align: center;
     }
+    .overlay[hidden] {
+      display: none !important;
+    }
     .card {
       max-width: 320px;
       border: 1px solid var(--line);
@@ -160,6 +163,7 @@
     const state = {
       running: false,
       pressing: false,
+      inputPointerId: null,
       score: 0,
       player: null,
       walls: [],
@@ -176,6 +180,7 @@
       state.elapsed = 0;
       state.spawnTimer = 0;
       state.nearCooldown = 0;
+      state.inputPointerId = null;
       state.walls = [];
       state.player = { x: 82, y: canvas.height / 2, r: 13, vy: 0 };
       scoreEl.textContent = '0';
@@ -316,6 +321,8 @@
     function gameOver() {
       if (!state.running) return;
       state.running = false;
+      state.pressing = false;
+      state.inputPointerId = null;
       const finalScore = Math.floor(state.score);
       if (finalScore > best) {
         best = finalScore;
@@ -338,17 +345,37 @@
     }
 
     function pressOn(e) {
-      e.preventDefault();
+      if (!state.running) return;
+      if (e.cancelable) e.preventDefault();
+      state.inputPointerId = e.pointerId;
       state.pressing = true;
-    }
-    function pressOff(e) {
-      e.preventDefault();
-      state.pressing = false;
+      if (canvas.setPointerCapture) {
+        try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+      }
     }
 
-    canvas.addEventListener('pointerdown', pressOn);
-    window.addEventListener('pointerup', pressOff);
-    window.addEventListener('pointercancel', pressOff);
+    function releaseControl(pointerId = null) {
+      if (pointerId !== null && state.inputPointerId !== pointerId) return;
+      state.pressing = false;
+      state.inputPointerId = null;
+    }
+
+    function pressOff(e) {
+      if (e.cancelable) e.preventDefault();
+      releaseControl(e.pointerId);
+      if (canvas.releasePointerCapture) {
+        try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+      }
+    }
+
+    canvas.addEventListener('pointerdown', pressOn, { passive: false });
+    canvas.addEventListener('pointerup', pressOff, { passive: false });
+    canvas.addEventListener('pointercancel', pressOff, { passive: false });
+    canvas.addEventListener('lostpointercapture', () => releaseControl());
+    window.addEventListener('blur', () => releaseControl());
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) releaseControl();
+    });
 
     startBtn.addEventListener('click', () => {
       reset();

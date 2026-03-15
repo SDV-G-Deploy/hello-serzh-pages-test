@@ -194,3 +194,12 @@ New rule:
 
 Next:
 - Проверить Lane Pulse Flip с тем же каркасом HUD/restart/best, чтобы ускорить следующий daily ship.
+
+## 2026-03-15 (thumb-zipline mobile restart fix)
+
+- Исправлен баг рестарта в `demos/thumb-zipline/index.html`: оверлей `#overOverlay` с `hidden` иногда продолжал перехватывать тапы, из-за чего «Ещё ран» визуально/функционально зависал на мобильных.
+- Добавлен явный CSS safeguard: `.overlay[hidden] { display: none !important; }`.
+- Укреплена обработка ввода: pointer-события ограничены canvas, добавлен `pointerId`-контроль + `lostpointercapture/blur/visibilitychange` сброс, чтобы не оставалось залипшего `pressing` между ранами.
+
+New rule:
+- Для любых fullscreen-оверлеев в мини-играх всегда добавлять явное правило `[hidden] { display: none !important; }` и не вешать глобальный `preventDefault` на window pointerup.
