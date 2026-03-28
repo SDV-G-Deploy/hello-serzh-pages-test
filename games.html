@@ -16,13 +16,13 @@
       gap: 8px;
       align-items: center;
     }
-    .games-toolbar strong { font-size: 14px; color: #e2e8f0; }
+    .games-toolbar strong { font-size: 14px; color: var(--heading); }
 
     .filter-btn {
       appearance: none;
       border: 1px solid var(--line);
-      color: white;
-      background: rgba(255,255,255,.06);
+      color: var(--heading);
+      background: color-mix(in oklab, var(--surface-strong) 88%, transparent);
       border-radius: 999px;
       padding: 8px 12px;
       font-size: 13px;
@@ -30,11 +30,15 @@
       cursor: pointer;
       transition: .16s ease;
     }
-    .filter-btn:hover { background: rgba(255,255,255,.12); }
+    .filter-btn:hover {
+      background: color-mix(in oklab, var(--surface-strong) 82%, var(--accent) 18%);
+      border-color: color-mix(in oklab, var(--line) 62%, var(--accent) 38%);
+    }
     .filter-btn.active {
-      background: linear-gradient(135deg,var(--accent),var(--accent2));
+      color: #f8fffe;
+      background: linear-gradient(135deg,var(--accent),var(--accent-strong));
       border-color: transparent;
-      box-shadow: 0 6px 16px rgba(56,189,248,.25);
+      box-shadow: 0 6px 16px color-mix(in oklab, var(--accent) 34%, transparent);
     }
 
     .games-grid {
@@ -61,7 +65,7 @@
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 14px;
-      background: rgba(255,255,255,.04);
+      background: color-mix(in oklab, var(--surface-strong) 87%, transparent);
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -75,7 +79,7 @@
     }
 
     .game-title { margin: 0; font-size: 20px; line-height: 1.2; }
-    .game-subtitle { margin: 4px 0 0; color: #dbeafe; font-size: 13px; }
+    .game-subtitle { margin: 4px 0 0; color: color-mix(in oklab, var(--accent) 66%, var(--muted) 34%); font-size: 13px; }
     .game-desc { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
 
     .status-badge {
@@ -85,12 +89,12 @@
       border-radius: 999px;
       font-size: 12px;
       padding: 4px 9px;
-      border: 1px solid rgba(255,255,255,.24);
+      border: 1px solid color-mix(in oklab, var(--line) 62%, var(--heading) 38%);
       font-weight: 700;
     }
-    .status-playable { background: rgba(16,185,129,.2); color: #86efac; }
-    .status-prototype { background: rgba(245,158,11,.2); color: #fcd34d; }
-    .status-polish { background: rgba(56,189,248,.2); color: #7dd3fc; }
+    .status-playable { background: color-mix(in oklab, var(--success) 22%, transparent); color: color-mix(in oklab, var(--success) 82%, var(--heading) 18%); }
+    .status-prototype { background: color-mix(in oklab, var(--warning) 22%, transparent); color: color-mix(in oklab, var(--warning) 84%, var(--heading) 16%); }
+    .status-polish { background: color-mix(in oklab, var(--accent) 20%, transparent); color: color-mix(in oklab, var(--accent-strong) 80%, var(--heading) 20%); }
 
     .game-tags { display: flex; flex-wrap: wrap; gap: 6px; }
     .tag {
@@ -99,15 +103,15 @@
       font-size: 12px;
       padding: 4px 8px;
       border: 1px solid var(--line);
-      color: #cbd5e1;
-      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      background: color-mix(in oklab, var(--surface-strong) 84%, transparent);
     }
 
     .game-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
     .action-btn {
       appearance: none;
       border: 1px solid var(--line);
-      color: white;
+      color: var(--heading);
       text-decoration: none;
       border-radius: 10px;
       padding: 8px 12px;
@@ -117,10 +121,16 @@
     }
     .action-btn.primary {
       border-color: transparent;
-      background: linear-gradient(135deg,var(--accent),var(--accent2));
+      color: #f8fffe;
+      background: linear-gradient(135deg,var(--accent),var(--accent-strong));
     }
-    .action-btn.secondary { background: rgba(255,255,255,.05); }
-    .action-btn:hover { transform: translateY(-1px); }
+    .action-btn.secondary {
+      background: color-mix(in oklab, var(--surface-strong) 88%, transparent);
+    }
+    .action-btn:hover {
+      transform: translateY(-1px);
+      border-color: color-mix(in oklab, var(--line) 58%, var(--accent) 42%);
+    }
 
     .game-empty {
       border: 1px dashed var(--line);
